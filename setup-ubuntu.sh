@@ -197,8 +197,29 @@ install_pm2() {
 setup_environment() {
     print_status "Configuring environment..."
     
-    # Create production environment if it doesn't exist
-    if [ ! -f "$PROJECT_DIR/.env" ]; then
+    # Update existing .env for production or create new one
+    if [ -f "$PROJECT_DIR/.env" ]; then
+        print_status "Updating existing .env file for production..."
+        
+        # Update NODE_ENV to production
+        sed -i 's/NODE_ENV=development/NODE_ENV=production/' "$PROJECT_DIR/.env"
+        
+        # Add Redis configuration if not present
+        if ! grep -q "REDIS_URL" "$PROJECT_DIR/.env"; then
+            echo "" >> "$PROJECT_DIR/.env"
+            echo "# Redis Configuration" >> "$PROJECT_DIR/.env"
+            echo "REDIS_URL=redis://localhost:6379" >> "$PROJECT_DIR/.env"
+            echo "REDIS_PASSWORD=" >> "$PROJECT_DIR/.env"
+        fi
+        
+        # Add session store configuration
+        if ! grep -q "SESSION_STORE" "$PROJECT_DIR/.env"; then
+            echo "SESSION_STORE=redis" >> "$PROJECT_DIR/.env"
+        fi
+        
+        chown $SERVICE_USER:$SERVICE_USER "$PROJECT_DIR/.env"
+        print_success "Environment file updated for production"
+    else
         cat > "$PROJECT_DIR/.env" << EOF
 # ConvoAI Ubuntu Server Configuration
 NODE_ENV=production
@@ -227,14 +248,13 @@ RATE_LIMIT_MAX_REQUESTS=100
 
 # Session Configuration
 SESSION_MAX_AGE=86400000
+SESSION_STORE=redis
 
 # Logging
 LOG_LEVEL=info
 EOF
         chown $SERVICE_USER:$SERVICE_USER "$PROJECT_DIR/.env"
         print_success "Environment file created"
-    else
-        print_success "Environment file already exists"
     fi
 }
 
@@ -274,7 +294,12 @@ EOF
 setup_nginx() {
     print_status "Configuring Nginx..."
     
-    cat > /etc/nginx/sites-available/convoai << 'EOF'
+    # First, add rate limiting to the main nginx config
+    if ! grep -q "limit_req_zone" /etc/nginx/nginx.conf; then
+        sed -i '/http {/a\\tlimit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;' /etc/nginx/nginx.conf
+    fi
+    
+    cat > /etc/nginx/sites-available/convoai << EOF
 server {
     listen 80;
     server_name _;  # Replace with your domain
@@ -285,20 +310,17 @@ server {
     add_header X-XSS-Protection "1; mode=block" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     
-    # Rate limiting
-    limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
-    
     location / {
         limit_req zone=api burst=20 nodelay;
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
         
         # Timeouts
         proxy_connect_timeout 60s;
@@ -308,9 +330,21 @@ server {
     
     # Static files
     location /public/ {
-        alias /opt/convoai/public/;
+        alias $PROJECT_DIR/public/;
         expires 1y;
         add_header Cache-Control "public, immutable";
+    }
+    
+    # Handle Socket.io
+    location /socket.io/ {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
     }
 }
 EOF
