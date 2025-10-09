@@ -1,0 +1,54 @@
+{
+  "category": "support",
+  "items": [
+    {
+      "id": "pairing-dimmer",
+      "title": "How to Pair Dimmer Switch",
+      "content": "To pair your Lightwave dimmer switch: 1) Download the Lightwave app 2) Create an account 3) Press and hold the dimmer button for 5 seconds until it flashes 4) In the app, tap \"Add Device\" 5) Follow the on-screen instructions",
+      "keywords": [
+        "pair",
+        "pairing",
+        "dimmer",
+        "switch",
+        "setup",
+        "install",
+        "app",
+        "connect"
+      ],
+      "tags": [
+        "setup",
+        "pairing",
+        "troubleshooting"
+      ],
+      "answers": [
+        "To pair the dimmer: hold the button for 5 seconds until it flashes, then use the app to add the device",
+        "First download our Lightwave app, then press and hold the dimmer button for 5 seconds",
+        "The pairing process involves holding the dimmer button and following the app instructions"
+      ]
+    },
+    {
+      "id": "wifi-connection",
+      "title": "WiFi Connection Issues",
+      "content": "If your device won't connect to WiFi: 1) Check your WiFi password is correct 2) Ensure 2.4GHz network is available 3) Move device closer to router 4) Restart your router 5) Reset the device and try pairing again",
+      "keywords": [
+        "wifi",
+        "connection",
+        "network",
+        "password",
+        "2.4GHz",
+        "router",
+        "reset"
+      ],
+      "tags": [
+        "troubleshooting",
+        "wifi",
+        "connectivity"
+      ],
+      "answers": [
+        "Check your WiFi password and ensure you're using a 2.4GHz network",
+        "Try moving the device closer to your router during setup",
+        "If issues persist, restart your router and reset the device"
+      ]
+    }
+  ]
+}
