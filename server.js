@@ -1,11 +1,29 @@
 // Load environment variables
 require('dotenv').config();
 
-// Debug environment loading
-console.log('🔍 Environment loaded:');
-console.log('  NODE_ENV:', process.env.NODE_ENV);
-console.log('  PORT:', process.env.PORT);
-console.log('  OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? `${process.env.OPENAI_API_KEY.substring(0, 7)}...${process.env.OPENAI_API_KEY.slice(-4)}` : 'NOT SET');
+// Enhanced production logging for ConvoAI
+const startTime = new Date().toISOString();
+console.log('🚀 ConvoAI Live Chat System Starting...');
+console.log('� Start Time:', startTime);
+console.log('�🔍 Environment Configuration:');
+console.log('  NODE_ENV:', process.env.NODE_ENV || 'development');
+console.log('  PORT:', process.env.PORT || '3000');
+console.log('  DOMAIN:', process.env.DOMAIN || 'localhost');
+console.log('  MONGODB_URI:', process.env.MONGODB_URI ? '✅ Configured' : '❌ Missing');
+console.log('  OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? `✅ ${process.env.OPENAI_API_KEY.substring(0, 7)}...${process.env.OPENAI_API_KEY.slice(-4)}` : '❌ NOT SET');
+
+// Enhanced error handling for production
+process.on('uncaughtException', (error) => {
+    console.error('💥 FATAL: Uncaught Exception in ConvoAI:', error);
+    console.error('Stack:', error.stack);
+    process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('💥 FATAL: Unhandled Promise Rejection in ConvoAI:', reason);
+    console.error('Promise:', promise);
+    process.exit(1);
+});
 
 const express = require('express');
 const http = require('http');
@@ -218,16 +236,56 @@ app.get('/api/health', (req, res) => {
     res.status(httpStatus).json(health);
 });
 
+// Enhanced health check for ConvoAI production monitoring
 app.get('/health', (req, res) => {
+    const isHealthy = database.isHealthy();
     const health = {
-        status: 'OK',
+        status: isHealthy ? 'healthy' : 'unhealthy',
+        service: 'ConvoAI Live Chat System',
+        version: '1.0.0',
         timestamp: new Date().toISOString(),
-        database: database.isHealthy() ? 'connected' : 'disconnected',
-        knowledgeBase: knowledgeBase.isInitialized ? 'initialized' : 'initializing',
-        uptime: process.uptime()
+        uptime: process.uptime(),
+        database: {
+            status: isHealthy ? 'connected' : 'disconnected',
+            readyState: mongoose.connection.readyState
+        },
+        knowledgeBase: {
+            status: knowledgeBase.isInitialized ? 'initialized' : 'initializing'
+        },
+        memory: process.memoryUsage(),
+        environment: process.env.NODE_ENV || 'development',
+        pid: process.pid,
+        platform: process.platform,
+        nodeVersion: process.version
     };
     
-    res.json(health);
+    const httpStatus = isHealthy ? 200 : 503;
+    res.status(httpStatus).json(health);
+});
+
+// Basic API status endpoint
+app.get('/api/status', (req, res) => {
+    res.json({ 
+        message: 'ConvoAI API is running',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+    });
+});
+
+// Root endpoint for basic connectivity test
+app.get('/', (req, res) => {
+    res.json({
+        message: 'ConvoAI Live Chat System',
+        status: 'running',
+        version: '1.0.0',
+        timestamp: new Date().toISOString(),
+        endpoints: {
+            health: '/health',
+            api: '/api',
+            chatDemo: '/chatkit-enhanced-demo.html',
+            agentDashboard: '/agent.html'
+        }
+    });
 });
 
 // Register
