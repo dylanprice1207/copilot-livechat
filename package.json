@@ -26,7 +26,9 @@
     "docker:logs": "docker-compose logs -f",
     "lint": "echo 'Linting...'",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "health": "node healthcheck.js"
+    "health": "node healthcheck.js",
+    "test:db": "node -e \"require('dotenv').config(); const database = require('./src/config/database'); database.connect().then(() => { console.log('✅ Database connection test successful'); process.exit(0); }).catch(err => { console.error('❌ Database connection test failed:', err.message); process.exit(1); });\"",
+    "test:knowledge": "node -e \"require('dotenv').config(); const database = require('./src/config/database'); const knowledgeBase = require('./src/services/knowledgeBase'); database.connect().then(() => knowledgeBase.initialize()).then(() => { console.log('✅ Knowledge base test successful'); process.exit(0); }).catch(err => { console.error('❌ Knowledge base test failed:', err.message); process.exit(1); });\""
   },
   "keywords": [
     "chat",

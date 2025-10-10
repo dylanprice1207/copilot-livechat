@@ -20,6 +20,10 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 
+// Import enhanced database connection
+const database = require('./src/config/database');
+const knowledgeBase = require('./src/services/knowledgeBase');
+
 // AI Services
 const OpenAIService = require('./src/server/services/OpenAIService');
 const DepartmentRouter = require('./src/server/services/DepartmentRouter');
@@ -46,21 +50,8 @@ const io = socketIo(server, {
 
 // Configuration
 const PORT = process.env.PORT || 3000;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/livechat';
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'your-session-secret-change-in-production';
-
-// MongoDB Connection
-mongoose.connect(MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
-
-// Initialize Analytics Service with models
-AnalyticsService.initialize(Message, ChatRoom);
-
-// Initialize ChatFlow Service with Settings model
-const Settings = require('./src/server/models/Settings');
-ChatFlowService.initialize(Settings);
 
 // Middleware
 app.use(helmet({
@@ -167,9 +158,32 @@ const authenticateToken = async (req, res, next) => {
 };
 
 // Routes
-// Health check
+// Enhanced Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Server is running', timestamp: new Date() });
+    const health = {
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        database: database.isHealthy() ? 'connected' : 'disconnected',
+        knowledgeBase: knowledgeBase.isInitialized ? 'initialized' : 'initializing',
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        environment: process.env.NODE_ENV || 'development'
+    };
+    
+    const httpStatus = database.isHealthy() ? 200 : 503;
+    res.status(httpStatus).json(health);
+});
+
+app.get('/health', (req, res) => {
+    const health = {
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        database: database.isHealthy() ? 'connected' : 'disconnected',
+        knowledgeBase: knowledgeBase.isInitialized ? 'initialized' : 'initializing',
+        uptime: process.uptime()
+    };
+    
+    res.json(health);
 });
 
 // Register
@@ -2069,18 +2083,64 @@ async function initializeOpenAIFromSettings() {
   }
 }
 
-// Start server
-server.listen(PORT, async () => {
-  console.log(`Server running on port ${PORT}`);
-  
-  // Initialize OpenAI configuration
-  await initializeOpenAIFromSettings();
-  
-  // Initialize Knowledge Base
-  try {
-    const KnowledgeBaseService = require('./src/server/services/KnowledgeBaseService');
-    await KnowledgeBaseService.initialize();
-  } catch (error) {
-    console.error('❌ Failed to initialize Knowledge Base:', error);
-  }
+// Initialize application
+async function startServer() {
+    try {
+        console.log('🚀 Starting ConvoAI Live Chat System...');
+        
+        // Initialize database connection
+        console.log('📊 Connecting to MongoDB Atlas...');
+        await database.connect();
+        
+        // Initialize Analytics Service with models
+        AnalyticsService.initialize(Message, ChatRoom);
+
+        // Initialize ChatFlow Service with Settings model
+        const Settings = require('./src/server/models/Settings');
+        ChatFlowService.initialize(Settings);
+        
+        // Initialize knowledge base (with fallback)
+        console.log('📚 Initializing Knowledge Base...');
+        await knowledgeBase.initialize();
+        
+        // Initialize OpenAI configuration
+        await initializeOpenAIFromSettings();
+        
+        // Start server
+        server.listen(PORT, () => {
+            console.log('🎉 ConvoAI Live Chat System started successfully!');
+            console.log(`🌐 Server running on port ${PORT}`);
+            console.log(`📊 Database: ${database.isHealthy() ? 'Connected' : 'Disconnected'}`);
+            console.log(`📚 Knowledge Base: ${knowledgeBase.isInitialized ? 'Initialized' : 'Initializing'}`);
+            console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+            console.log(`🎯 Main application: http://localhost:${PORT}`);
+        });
+        
+    } catch (error) {
+        console.error('💥 Failed to start server:', error.message);
+        console.error('Stack trace:', error.stack);
+        
+        // Graceful shutdown
+        process.exit(1);
+    }
+}
+
+// Handle graceful shutdown
+process.on('SIGTERM', async () => {
+    console.log('🛑 Received SIGTERM, shutting down gracefully...');
+    await database.disconnect();
+    server.close(() => {
+        process.exit(0);
+    });
 });
+
+process.on('SIGINT', async () => {
+    console.log('🛑 Received SIGINT, shutting down gracefully...');
+    await database.disconnect();
+    server.close(() => {
+        process.exit(0);
+    });
+});
+
+// Start the server
+startServer();
