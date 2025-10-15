@@ -102,12 +102,11 @@ class KnowledgeBaseService {
 
             console.log('📖 ConvoAI: Loading knowledge base from MongoDB...');
             
-            // Load all active knowledge items from database with timeout
+            // Load all active knowledge items from database
             const items = await this.Knowledge.find({ 'metadata.isActive': true })
                 .select('category title content keywords answers tags priority source fileName uploadDate')
                 .sort({ category: 1, priority: 1, createdAt: -1 })
                 .lean()
-                .timeout(10000)
                 .exec();
             
             console.log(`📚 ConvoAI: Loaded ${items.length} knowledge entries from database`);

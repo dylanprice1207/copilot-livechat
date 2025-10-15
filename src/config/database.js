@@ -15,7 +15,6 @@ class DatabaseConnection {
                 useUnifiedTopology: true,
                 serverSelectionTimeoutMS: 30000, // Increased timeout
                 socketTimeoutMS: 45000,
-                bufferMaxEntries: 0,
                 maxPoolSize: 10,
                 minPoolSize: 2,
                 maxIdleTimeMS: 30000,

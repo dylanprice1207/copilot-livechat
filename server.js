@@ -219,14 +219,15 @@ const limiter = rateLimit({
 });
 app.use('/api', limiter);
 
-// Session configuration
+// Session configuration with safe MongoDB URI handling
+const mongoUri = process.env.MONGODB_URI;
 app.use(session({
   secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({ mongoUrl: MONGODB_URI }),
+  store: mongoUri ? MongoStore.create({ mongoUrl: mongoUri }) : null,
   cookie: { 
-    secure: false, // Set to true in production with HTTPS
+    secure: process.env.NODE_ENV === 'production', // Dynamic based on environment
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));

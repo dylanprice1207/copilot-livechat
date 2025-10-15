@@ -153,7 +153,6 @@ const connectDatabase = async () => {
             useUnifiedTopology: true,
             serverSelectionTimeoutMS: 10000,
             socketTimeoutMS: 20000,
-            bufferMaxEntries: 0,
             ssl: mongoURI.includes('mongodb+srv'),
             retryWrites: true,
             maxPoolSize: 5,
