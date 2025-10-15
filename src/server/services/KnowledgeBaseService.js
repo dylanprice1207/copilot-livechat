@@ -1,7 +1,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const XLSX = require('xlsx');
-const Knowledge = require('../models/Knowledge');
+const mongoose = require('mongoose');
 
 class KnowledgeBaseService {
     constructor() {
@@ -9,7 +9,30 @@ class KnowledgeBaseService {
         this.categories = new Map();
         this.searchIndex = new Map();
         this.isLoaded = false;
+        this.isInitialized = false;
+        this.initializationRetries = 0;
+        this.maxRetries = 3;
+        this.Knowledge = null;
         this.knowledgeBasePath = path.join(__dirname, '../../knowledge-base');
+    }
+
+    // Safe model initialization
+    async initializeModel() {
+        try {
+            if (!this.Knowledge) {
+                try {
+                    this.Knowledge = mongoose.model('Knowledge');
+                    console.log('✅ ConvoAI KnowledgeBase: Using existing Knowledge model');
+                } catch (error) {
+                    this.Knowledge = require('../models/Knowledge');
+                    console.log('✅ ConvoAI KnowledgeBase: Loaded Knowledge model');
+                }
+            }
+            return true;
+        } catch (error) {
+            console.error('❌ ConvoAI KnowledgeBase: Model initialization failed:', error.message);
+            return false;
+        }
     }
 
     /**
@@ -17,21 +40,54 @@ class KnowledgeBaseService {
      */
     async initialize() {
         try {
-            console.log('📚 Initializing Knowledge Base...');
-            
-            // Load knowledge base from MongoDB
-            await this.loadKnowledgeBase();
-            
+            console.log('📚 ConvoAI: Initializing Knowledge Base Service...');
+
+            // Initialize model safely
+            const modelInitialized = await this.initializeModel();
+            if (!modelInitialized) {
+                throw new Error('Failed to initialize Knowledge model');
+            }
+
+            // Check database connection
+            if (mongoose.connection.readyState !== 1) {
+                console.log('⚠️ ConvoAI KnowledgeBase: Database not connected, using default knowledge');
+                this.initializeDefaultKnowledge();
+                return true;
+            }
+
+            // Load knowledge from database with timeout
+            const knowledge = await Promise.race([
+                this.loadKnowledgeBase(),
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Knowledge base load timeout')), 15000)
+                )
+            ]);
+
             // Build search index
             this.buildSearchIndex();
             
             this.isLoaded = true;
-            console.log(`✅ Knowledge Base loaded with ${this.knowledgeBase.size} entries`);
+            this.isInitialized = true;
+            this.initializationRetries = 0;
+            
+            console.log(`✅ ConvoAI KnowledgeBase: Initialized with ${this.knowledgeBase.size} entries`);
+            return true;
             
         } catch (error) {
-            console.error('❌ Failed to initialize Knowledge Base from MongoDB:', error);
-            // Fallback to file-based system if MongoDB fails
-            await this.fallbackToFileSystem();
+            this.initializationRetries++;
+            console.error(`❌ ConvoAI KnowledgeBase: Initialization attempt ${this.initializationRetries} failed:`, error.message);
+            
+            if (this.initializationRetries < this.maxRetries) {
+                const delay = 5000 * this.initializationRetries;
+                console.log(`⏳ ConvoAI KnowledgeBase: Retrying initialization in ${delay}ms...`);
+                
+                await new Promise(resolve => setTimeout(resolve, delay));
+                return this.initialize();
+            } else {
+                console.log('💥 ConvoAI KnowledgeBase: Max retries reached, using default knowledge');
+                this.initializeDefaultKnowledge();
+                return false;
+            }
         }
     }
 
@@ -40,9 +96,21 @@ class KnowledgeBaseService {
      */
     async loadKnowledgeBase() {
         try {
-            // Load all active knowledge items from database
-            const items = await Knowledge.find({ 'metadata.isActive': true })
-                .sort({ category: 1, priority: 1, createdAt: -1 });
+            if (!this.Knowledge) {
+                throw new Error('Knowledge model not initialized');
+            }
+
+            console.log('📖 ConvoAI: Loading knowledge base from MongoDB...');
+            
+            // Load all active knowledge items from database with timeout
+            const items = await this.Knowledge.find({ 'metadata.isActive': true })
+                .select('category title content keywords answers tags priority source fileName uploadDate')
+                .sort({ category: 1, priority: 1, createdAt: -1 })
+                .lean()
+                .timeout(10000)
+                .exec();
+            
+            console.log(`📚 ConvoAI: Loaded ${items.length} knowledge entries from database`);
             
             // Clear existing cache
             this.knowledgeBase.clear();
@@ -50,8 +118,8 @@ class KnowledgeBaseService {
             
             // Load items into memory for fast access
             for (const item of items) {
-                this.knowledgeBase.set(item.id, {
-                    id: item.id,
+                this.knowledgeBase.set(item._id.toString(), {
+                    id: item._id.toString(),
                     category: item.category,
                     title: item.title,
                     content: item.content,
@@ -182,6 +250,93 @@ class KnowledgeBaseService {
             await fs.writeFile(filePath, JSON.stringify(data, null, 2));
             console.log(`📝 Created default knowledge file: ${filename}`);
         }
+    }
+
+    /**
+     * Initialize default knowledge when database is not available
+     */
+    initializeDefaultKnowledge() {
+        console.log('📝 ConvoAI: Initializing default knowledge base...');
+        
+        const defaultKnowledge = [
+            {
+                id: 'default-1',
+                category: 'general',
+                title: 'Welcome to ConvoAI',
+                content: "How can I help you?",
+                keywords: ["help", "assist", "support", "start"],
+                answers: ["I'm ConvoAI, your intelligent chat assistant! I can help you with questions about our services, provide support, and assist with various inquiries. What would you like to know?"],
+                tags: ["welcome", "greeting"],
+                priority: 1,
+                source: 'default'
+            },
+            {
+                id: 'default-2',
+                category: 'general',
+                title: 'Business Hours',
+                content: "What are your business hours?",
+                keywords: ["hours", "time", "open", "closed", "schedule"],
+                answers: ["Our business hours are Monday to Friday, 9 AM to 6 PM EST. However, our ConvoAI chat support is available 24/7 to assist you!"],
+                tags: ["hours", "schedule"],
+                priority: 2,
+                source: 'default'
+            },
+            {
+                id: 'default-3',
+                category: 'support',
+                title: 'Contact Support',
+                content: "How do I contact support?",
+                keywords: ["contact", "support", "help", "phone", "email"],
+                answers: ["You can contact our support team through this live chat system, email us at support@convoai.space, or call us during business hours. Our ConvoAI assistant is here to help 24/7!"],
+                tags: ["contact", "support"],
+                priority: 1,
+                source: 'default'
+            },
+            {
+                id: 'default-4',
+                category: 'product',
+                title: 'About ConvoAI',
+                content: "What is ConvoAI?",
+                keywords: ["convoai", "about", "what", "system", "ai"],
+                answers: ["ConvoAI is an advanced live chat system that provides intelligent, real-time customer support. It combines AI-powered responses with human agent capabilities to deliver exceptional customer service experiences."],
+                tags: ["product", "about"],
+                priority: 2,
+                source: 'default'
+            },
+            {
+                id: 'default-5',
+                category: 'technical',
+                title: 'How Live Chat Works',
+                content: "How does the live chat work?",
+                keywords: ["chat", "live", "work", "how", "function"],
+                answers: ["Our live chat system connects you instantly with support. You can type your questions, and our ConvoAI system will provide immediate responses. For complex issues, you'll be connected to a human agent."],
+                tags: ["chat", "technical"],
+                priority: 2,
+                source: 'default'
+            }
+        ];
+        
+        // Clear and populate knowledge base
+        this.knowledgeBase.clear();
+        this.categories.clear();
+        
+        for (const item of defaultKnowledge) {
+            this.knowledgeBase.set(item.id, item);
+            
+            // Update category count
+            if (!this.categories.has(item.category)) {
+                this.categories.set(item.category, { name: item.category, count: 0 });
+            }
+            this.categories.get(item.category).count++;
+        }
+        
+        // Build search index
+        this.buildSearchIndex();
+        
+        this.isLoaded = true;
+        this.isInitialized = true;
+        
+        console.log(`✅ ConvoAI: Default knowledge base initialized with ${defaultKnowledge.length} entries`);
     }
 
     /**
@@ -409,9 +564,17 @@ class KnowledgeBaseService {
      * Search knowledge base
      */
     searchKnowledge(query, category = null, limit = 5) {
-        if (!this.isLoaded) {
-            console.log('⚠️ Knowledge base not loaded yet');
-            return [];
+        if (!this.isLoaded || !this.isInitialized) {
+            console.log('⚠️ ConvoAI KnowledgeBase: Not fully initialized yet');
+            return [{
+                id: 'init-1',
+                category: 'system',
+                title: 'ConvoAI System Initializing',
+                content: 'System initializing',
+                answers: ["Our ConvoAI knowledge base is currently initializing. Please try again in a moment, and I'll be ready to assist you!"],
+                priority: 1,
+                source: 'system'
+            }];
         }
 
         const queryWords = query.toLowerCase().split(/\s+/);

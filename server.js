@@ -40,7 +40,28 @@ const path = require('path');
 
 // Import enhanced database connection
 const database = require('./src/config/database');
-const knowledgeBase = require('./src/services/knowledgeBase');
+
+// Safe import of knowledge base service with error handling
+let knowledgeBase;
+try {
+    knowledgeBase = require('./src/server/services/KnowledgeBaseService');
+    console.log('✅ ConvoAI: KnowledgeBaseService loaded safely');
+} catch (error) {
+    console.error('❌ ConvoAI: KnowledgeBaseService import error:', error.message);
+    // Create a fallback service
+    knowledgeBase = {
+        initialize: async () => {
+            console.log('⚠️ ConvoAI: Using fallback knowledge base');
+            return Promise.resolve(true);
+        },
+        searchKnowledge: () => [{
+            question: "ConvoAI System",
+            answer: "ConvoAI is running in safe mode. Knowledge base service will be restored shortly.",
+            category: "system"
+        }],
+        isInitialized: false
+    };
+}
 
 // AI Services
 const OpenAIService = require('./src/server/services/OpenAIService');
@@ -50,12 +71,31 @@ const AnalyticsService = require('./src/server/services/AnalyticsService');
 const ChatFlowService = require('./src/server/services/ChatFlowService');
 const aiRoutes = require('./src/server/routes/ai');
 
-// Import User model
-const User = require('./src/server/models/User');
-const Organization = require('./src/server/models/Organization');
-const Department = require('./src/server/models/Department');
-const Message = require('./src/server/models/Message');
-const ChatRoom = require('./src/server/models/ChatRoom');
+// Safe model imports to prevent Mongoose overwrite errors
+let User, Organization, Department, Message, ChatRoom;
+
+try {
+    // Clear any existing model cache
+    if (mongoose.models) {
+        delete mongoose.models.User;
+        delete mongoose.models.Organization;
+        delete mongoose.models.Department;
+        delete mongoose.models.Message;
+        delete mongoose.models.ChatRoom;
+        delete mongoose.models.Knowledge;
+    }
+    
+    User = require('./src/server/models/User');
+    Organization = require('./src/server/models/Organization');
+    Department = require('./src/server/models/Department');
+    Message = require('./src/server/models/Message');
+    ChatRoom = require('./src/server/models/ChatRoom');
+    
+    console.log('✅ ConvoAI: All models loaded successfully');
+} catch (error) {
+    console.error('❌ ConvoAI: Model loading error:', error.message);
+    console.log('⚠️ ConvoAI: Continuing with limited functionality...');
+}
 
 const app = express();
 const server = http.createServer(app);

@@ -188,4 +188,47 @@ knowledgeSchema.methods.restore = function() {
     return this.save();
 };
 
-module.exports = mongoose.model('Knowledge', knowledgeSchema);
+knowledgeSchema.methods.incrementUsage = function() {
+    this.usage_count += 1;
+    this.last_used = new Date();
+    return this.save();
+};
+
+// Static methods
+knowledgeSchema.statics.findByKeywords = function(keywords) {
+    return this.find({
+        'metadata.isActive': true,
+        keywords: { $in: keywords }
+    }).sort({ priority: -1, usage_count: -1 });
+};
+
+knowledgeSchema.statics.searchByText = function(searchText, limit = 10) {
+    return this.find({
+        $and: [
+            { 'metadata.isActive': true },
+            {
+                $or: [
+                    { question: { $regex: searchText, $options: 'i' } },
+                    { answer: { $regex: searchText, $options: 'i' } },
+                    { keywords: { $in: [new RegExp(searchText, 'i')] } }
+                ]
+            }
+        ]
+    })
+    .sort({ priority: -1, usage_count: -1 })
+    .limit(limit);
+};
+
+// CRITICAL FIX: Prevent model overwrite error
+let Knowledge;
+try {
+    // Try to get existing model
+    Knowledge = mongoose.model('Knowledge');
+    console.log('✅ ConvoAI: Using existing Knowledge model');
+} catch (error) {
+    // Model doesn't exist, create new one
+    Knowledge = mongoose.model('Knowledge', knowledgeSchema);
+    console.log('✅ ConvoAI: Created new Knowledge model');
+}
+
+module.exports = Knowledge;
