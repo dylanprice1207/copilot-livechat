@@ -485,6 +485,171 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// Admin Authentication Routes
+app.post('/api/admin-login', async (req, res) => {
+  try {
+    const { email, password, role } = req.body;
+
+    // Validation
+    if (!email || !password || !role) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Email, password, and role are required' 
+      });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase() });
+    
+    if (!user) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Invalid credentials' 
+      });
+    }
+
+    // Check password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    
+    if (!isPasswordValid) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Invalid credentials' 
+      });
+    }
+
+    // Check if user has required role
+    const allowedRoles = {
+      'agent': ['agent', 'admin', 'super_admin', 'global_admin'],
+      'admin': ['admin', 'super_admin', 'global_admin'],
+      'org-admin': ['admin', 'super_admin', 'global_admin']
+    };
+
+    if (!allowedRoles[role] || !allowedRoles[role].includes(user.role)) {
+      return res.status(403).json({ 
+        success: false,
+        message: 'Insufficient permissions for this admin portal' 
+      });
+    }
+
+    // Generate JWT token with admin claim
+    const token = jwt.sign(
+      { 
+        userId: user._id,
+        email: user.email,
+        role: user.role,
+        adminPortal: role
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '8h' }
+    );
+
+    console.log(`Admin login successful: ${user.email} -> ${role} portal`);
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      token,
+      role: role,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role
+      }
+    });
+
+  } catch (error) {
+    console.error('Admin login error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error' 
+    });
+  }
+});
+
+// Verify admin token
+app.get('/api/verify-admin-token', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    
+    if (!user) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'User not found' 
+      });
+    }
+
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        adminPortal: req.user.adminPortal
+      }
+    });
+
+  } catch (error) {
+    console.error('Token verification error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error' 
+    });
+  }
+});
+
+// Admin middleware for protected routes
+const requireAdminAuth = (allowedRoles = []) => {
+  return async (req, res, next) => {
+    try {
+      const token = req.headers.authorization?.split(' ')[1] || 
+                   req.query.token || 
+                   req.cookies?.adminToken;
+      
+      if (!token) {
+        return res.redirect('/admin-login');
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decoded.userId);
+      
+      if (!user) {
+        return res.redirect('/admin-login');
+      }
+
+      // Check if user has required role for this portal
+      if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+        return res.status(403).send(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Access Denied</title>
+            <style>
+              body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+              .error { color: #d73502; }
+            </style>
+          </head>
+          <body>
+            <h1 class="error">Access Denied</h1>
+            <p>You don't have permission to access this admin portal.</p>
+            <a href="/admin-login">Login with different account</a>
+          </body>
+          </html>
+        `);
+      }
+
+      req.user = decoded;
+      req.currentUser = user;
+      next();
+    } catch (error) {
+      console.error('Admin auth error:', error);
+      return res.redirect('/admin-login');
+    }
+  };
+};
+
 // Get chat history
 app.get('/api/chat/:roomId', authenticateToken, async (req, res) => {
   try {
@@ -2331,6 +2496,321 @@ async function startServer() {
         process.exit(1);
     }
 }
+
+// Setup default admin user (development only)
+app.get('/setup-admin', async (req, res) => {
+  try {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(403).json({ error: 'Not available in production' });
+    }
+
+    // Check if admin already exists
+    const existingAdmin = await User.findOne({ email: 'admin@convoai.com' });
+    if (existingAdmin) {
+      return res.json({ 
+        success: true,
+        message: 'Admin user already exists',
+        credentials: {
+          email: 'admin@convoai.com',
+          password: 'admin123',
+          role: existingAdmin.role
+        }
+      });
+    }
+
+    // Create admin user
+    const hashedPassword = await bcrypt.hash('admin123', 10);
+    const adminUser = new User({
+      username: 'admin',
+      email: 'admin@convoai.com',
+      password: hashedPassword,
+      role: 'super_admin',
+      isActive: true,
+      profile: {
+        avatar: null,
+        bio: 'System Administrator'
+      }
+    });
+
+    await adminUser.save();
+    
+    res.json({
+      success: true,
+      message: 'Admin user created successfully!',
+      credentials: {
+        email: 'admin@convoai.com',
+        password: 'admin123',
+        role: 'super_admin'
+      }
+    });
+
+  } catch (error) {
+    console.error('Setup admin error:', error);
+    res.status(500).json({ error: 'Failed to create admin user' });
+  }
+});
+
+// Admin Login Route (no auth required)
+app.get('/admin-login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'admin-login.html'));
+});
+
+// Clean Admin Routes with Authentication
+app.get('/agent', requireAdminAuth(['agent', 'admin', 'super_admin', 'global_admin']), (req, res) => {
+  // Remove emojis and create clean agent dashboard
+  let html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Dashboard - ConvoAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/agent.css">
+    <style>
+        .admin-header {
+            background: linear-gradient(135deg, #4299e1, #667eea);
+            color: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid white;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .logout-btn:hover { background: rgba(255,255,255,0.3); }
+        body { margin: 0; padding: 20px; background: #f5f5f5; }
+    </style>
+</head>
+<body>
+    <div class="admin-header">
+        <div>
+            <h1><i class="fas fa-headset"></i> Agent Dashboard</h1>
+            <p>Welcome, ${req.currentUser.username}</p>
+        </div>
+        <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+    </div>
+    <div id="agent-content">
+        <iframe src="/agent-departments.html" 
+                style="width: 100%; height: 80vh; border: none; border-radius: 8px;">
+        </iframe>
+    </div>
+    <script>
+        function logout() {
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminRole');
+            window.location.href = '/admin-login';
+        }
+        // Set token for iframe requests
+        window.addEventListener('load', function() {
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                window.location.href = '/admin-login';
+            }
+        });
+    </script>
+</body>
+</html>`;
+  res.send(html);
+});
+
+app.get('/admin', requireAdminAuth(['admin', 'super_admin', 'global_admin']), (req, res) => {
+  let html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - ConvoAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { 
+            margin: 0; padding: 20px; background: #f5f5f5; 
+            font-family: 'Inter', sans-serif;
+        }
+        .admin-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .admin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+        }
+        .admin-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        .admin-card:hover { transform: translateY(-5px); }
+        .admin-card i { font-size: 3rem; color: #4299e1; margin-bottom: 15px; }
+        .admin-card h3 { margin-bottom: 15px; color: #2d3748; }
+        .admin-btn {
+            background: linear-gradient(135deg, #4299e1, #667eea);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid white;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-header">
+        <div>
+            <h1><i class="fas fa-user-shield"></i> System Admin Dashboard</h1>
+            <p>Welcome, ${req.currentUser.username} | Role: ${req.currentUser.role}</p>
+        </div>
+        <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+    </div>
+    
+    <div class="admin-grid">
+        <div class="admin-card">
+            <i class="fas fa-users"></i>
+            <h3>User Management</h3>
+            <p>Manage agents, admins, and user permissions</p>
+            <a href="/agent" class="admin-btn">Manage Users</a>
+        </div>
+        
+        <div class="admin-card">
+            <i class="fas fa-cog"></i>
+            <h3>AI Configuration</h3>
+            <p>Configure AI models and chat settings</p>
+            <a href="/ai-config.html" class="admin-btn" target="_blank">Configure AI</a>
+        </div>
+        
+        <div class="admin-card">
+            <i class="fas fa-chart-bar"></i>
+            <h3>Analytics</h3>
+            <p>View system performance and chat analytics</p>
+            <a href="/health" class="admin-btn" target="_blank">System Health</a>
+        </div>
+        
+        <div class="admin-card">
+            <i class="fas fa-building"></i>
+            <h3>Organizations</h3>
+            <p>Manage multi-tenant organizations</p>
+            <a href="/org-admin" class="admin-btn">Org Management</a>
+        </div>
+    </div>
+    
+    <script>
+        function logout() {
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminRole');
+            window.location.href = '/admin-login';
+        }
+    </script>
+</body>
+</html>`;
+  res.send(html);
+});
+
+app.get('/org-admin', requireAdminAuth(['admin', 'super_admin', 'global_admin']), (req, res) => {
+  let html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organization Admin - ConvoAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { margin: 0; padding: 20px; background: #f5f5f5; font-family: 'Inter', sans-serif; }
+        .admin-header {
+            background: linear-gradient(135deg, #1e88e5, #1565c0);
+            color: white;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid white;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .org-frame {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-header">
+        <div>
+            <h1><i class="fas fa-building"></i> Organization Admin</h1>
+            <p>Welcome, ${req.currentUser.username}</p>
+        </div>
+        <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+    </div>
+    
+    <div class="org-frame">
+        <iframe src="/org-admin.html" 
+                style="width: 100%; height: 85vh; border: none;">
+        </iframe>
+    </div>
+    
+    <script>
+        function logout() {
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminRole');
+            window.location.href = '/admin-login';
+        }
+    </script>
+</body>
+</html>`;
+  res.send(html);
+});
 
 // Handle graceful shutdown
 process.on('SIGTERM', async () => {
