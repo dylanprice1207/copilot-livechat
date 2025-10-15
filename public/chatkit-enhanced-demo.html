@@ -1,0 +1,1930 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConvoAI ChatKit Demo - Advanced Features</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .demo-container {
+            display: grid;
+            grid-template-columns: 350px 1fr 300px;
+            grid-template-rows: auto 1fr;
+            height: 100vh;
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header p {
+            opacity: 0.8;
+            font-size: 1.1rem;
+        }
+
+        .control-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow-y: auto;
+        }
+
+        .main-content {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .analytics-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow-y: auto;
+        }
+
+        .panel-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .control-group {
+            margin-bottom: 2rem;
+        }
+
+        .control-group h3 {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.875rem 1.25rem;
+            margin-bottom: 0.5rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .input-group input,
+        .input-group select,
+        .input-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .input-group input::placeholder,
+        .input-group textarea::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-online { background: #10b981; }
+        .status-offline { background: #ef4444; }
+        .status-loading { background: #f59e0b; }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .feature-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-card p {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .analytics-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .analytics-value {
+            font-weight: 600;
+            color: #10b981;
+        }
+
+        .log-container {
+            max-height: 300px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+        }
+
+        .log-entry {
+            margin-bottom: 0.5rem;
+            padding: 0.25rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .log-time {
+            color: #10b981;
+            margin-right: 0.5rem;
+        }
+
+        .log-action {
+            color: #3b82f6;
+            margin-right: 0.5rem;
+        }
+
+        .scenario-btn {
+            background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+            margin-bottom: 0.25rem;
+        }
+
+        .theme-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .theme-btn {
+            padding: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .theme-btn:hover,
+        .theme-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .cta-section {
+            max-width: 600px;
+        }
+
+        .cta-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .cta-section p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .cta-btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .cta-primary {
+            background: white;
+            color: #1e88e5;
+        }
+
+        .cta-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        @media (max-width: 1200px) {
+            .demo-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr auto;
+            }
+
+            .control-panel,
+            .analytics-panel {
+                max-height: 300px;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .demo-container {
+                padding: 0.5rem;
+                gap: 0.5rem;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .cta-section h2 {
+                font-size: 2rem;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .cta-btn {
+                min-width: 200px;
+                justify-content: center;
+            }
+        }
+
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                💬 ConvoAI ChatKit Demo
+                <div class="status-indicator" id="connection-status">
+                    <div class="status-dot status-loading"></div>
+                    <span>Connecting...</span>
+                </div>
+            </h1>
+            <p>Advanced ConvoAI chat widget testing environment with intelligent conversation flows, real-time analytics, and comprehensive debugging tools.</p>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <div class="panel-title">
+                🎮 Control Panel
+            </div>
+
+            <!-- Widget Controls -->
+            <div class="control-group">
+                <h3>Widget Controls</h3>
+                <button class="btn btn-primary" onclick="openWidget()">
+                    <span>💬 Open Widget</span>
+                    <span>Ctrl+O</span>
+                </button>
+                <button class="btn btn-secondary" onclick="closeWidget()">
+                    <span>✕ Close Widget</span>
+                </button>
+                <button class="btn btn-secondary" onclick="toggleWidget()">
+                    <span>🔄 Toggle Widget</span>
+                </button>
+                <button class="btn btn-warning" onclick="showNotification()">
+                    <span>🔔 Show Notification</span>
+                </button>
+            </div>
+
+            <!-- Theme Selector -->
+            <div class="control-group">
+                <h3>Widget Themes</h3>
+                <div class="theme-selector">
+                    <button class="theme-btn active" onclick="setTheme('convoai')">ConvoAI</button>
+                    <button class="theme-btn" onclick="setTheme('dark')">Dark</button>
+                    <button class="theme-btn" onclick="setTheme('corporate')">Corporate</button>
+                    <button class="theme-btn" onclick="setTheme('sunset')">Sunset</button>
+                    <button class="theme-btn" onclick="setTheme('eco')">Eco</button>
+                    <button class="theme-btn" onclick="setTheme('minimal')">Minimal</button>
+                </div>
+            </div>
+
+            <!-- Quick Department Tests -->
+            <div class="control-group">
+                <h3>Department Tests</h3>
+                <button class="btn btn-success" onclick="testDepartment('sales')">
+                    <span>💰 Test Sales</span>
+                </button>
+                <button class="btn btn-success" onclick="testDepartment('technical')">
+                    <span>🔧 Test Technical</span>
+                </button>
+                <button class="btn btn-success" onclick="testDepartment('support')">
+                    <span>🎧 Test Support</span>
+                </button>
+                <button class="btn btn-success" onclick="testDepartment('billing')">
+                    <span>💳 Test Billing</span>
+                </button>
+            </div>
+
+            <!-- Automated Scenarios -->
+            <div class="control-group">
+                <h3>Test Scenarios</h3>
+                <button class="btn scenario-btn" onclick="runScenario('product-inquiry')">
+                    <span>📱 Product Inquiry</span>
+                </button>
+                <button class="btn scenario-btn" onclick="runScenario('technical-issue')">
+                    <span>âš ¸ Technical Issue</span>
+                </button>
+                <button class="btn scenario-btn" onclick="runScenario('billing-question')">
+                    <span>💸 Billing Question</span>
+                </button>
+                <button class="btn scenario-btn" onclick="runScenario('general-chat')">
+                    <span>💬 General Chat</span>
+                </button>
+            </div>
+
+            <!-- Custom Message -->
+            <div class="control-group">
+                <h3>Send Custom Message</h3>
+                <div class="input-group">
+                    <textarea 
+                        id="custom-message" 
+                        placeholder="Type your test message here..."
+                        rows="3"
+                    ></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="sendCustomMessage()">
+                    <span>📤 Send Message</span>
+                </button>
+            </div>
+
+            <!-- Widget Settings -->
+            <div class="control-group">
+                <h3>Widget Settings</h3>
+                <div class="input-group">
+                    <label>Position</label>
+                    <select id="widget-position" onchange="updatePosition()">
+                        <option value="bottom-right">Bottom Right</option>
+                        <option value="bottom-left">Bottom Left</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Organization ID</label>
+                    <input type="text" id="org-id" value="convoai" onchange="updateOrgId()">
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="cta-section">
+                <h2>Experience ChatKit Enhanced</h2>
+                <p>
+                    Test our most advanced ChatKit implementation featuring intelligent flow routing, 
+                    AI assistance, real-time analytics, and comprehensive debugging capabilities.
+                </p>
+
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <span class="feature-icon"></span>
+                        <h3>AI Integration</h3>
+                        <p>Advanced AI with flow-based routing and context awareness</p>
+                    </div>
+                    <div class="feature-card">
+                        <span class="feature-icon">⚡</span>
+                        <h3>Flow Processing</h3>
+                        <p>Intelligent conversation flows with smart department routing</p>
+                    </div>
+                    <div class="feature-card">
+                        <span class="feature-icon">📊</span>
+                        <h3>Real-time Analytics</h3>
+                        <p>Live session monitoring and performance metrics</p>
+                    </div>
+                    <div class="feature-card">
+                        <span class="feature-icon">🎨</span>
+                        <h3>Theme System</h3>
+                        <p>Multiple beautiful themes with instant switching</p>
+                    </div>
+                </div>
+
+                <div class="cta-buttons">
+                    <button class="cta-btn cta-primary" onclick="startDemo()">
+                        🚀 Start Interactive Demo
+                    </button>
+                    <button class="cta-btn cta-secondary" onclick="runAllTests()">
+                        🧪 Run All Tests
+                    </button>
+                    <button class="cta-btn" onclick="debugWidget()" style="background: #e74c3c; margin-top: 10px;">
+                        🔍 Debug Widget
+                    </button>
+                    <button class="cta-btn" onclick="testNotification()" style="background: #f39c12; margin-top: 5px; font-size: 14px;">
+                        🔔 Test Notification
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Panel -->
+        <div class="analytics-panel">
+            <div class="panel-title">
+                </div>
+
+            <!-- Session Stats -->
+            <div class="control-group">
+                <h3>Session Statistics</h3>
+                <div class="analytics-item">
+                    <span>Active Sessions</span>
+                    <span class="analytics-value" id="active-sessions">0</span>
+                </div>
+                <div class="analytics-item">
+                    <span>Total Messages</span>
+                    <span class="analytics-value" id="total-messages">0</span>
+                </div>
+                <div class="analytics-item">
+                    <span>Flow Responses</span>
+                    <span class="analytics-value" id="flow-responses">0</span>
+                </div>
+                <div class="analytics-item">
+                    <span>AI Responses</span>
+                    <span class="analytics-value" id="ai-responses">0</span>
+                </div>
+            </div>
+
+            <!-- Performance Metrics -->
+            <div class="control-group">
+                <h3>Performance</h3>
+                <div class="analytics-item">
+                    <span>Avg Response Time</span>
+                    <span class="analytics-value" id="avg-response-time">0ms</span>
+                </div>
+                <div class="analytics-item">
+                    <span>Widget Load Time</span>
+                    <span class="analytics-value" id="widget-load-time">0ms</span>
+                </div>
+                <div class="analytics-item">
+                    <span>Success Rate</span>
+                    <span class="analytics-value" id="success-rate">100%</span>
+                </div>
+            </div>
+
+            <!-- Current Session Info -->
+            <div class="control-group">
+                <h3>Current Session</h3>
+                <div class="analytics-item">
+                    <span>Session ID</span>
+                    <span class="analytics-value" id="current-session">None</span>
+                </div>
+                <div class="analytics-item">
+                    <span>Department</span>
+                    <span class="analytics-value" id="current-department">None</span>
+                </div>
+                <div class="analytics-item">
+                    <span>Flow State</span>
+                    <span class="analytics-value" id="flow-state">Inactive</span>
+                </div>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="control-group">
+                <h3>Activity Log</h3>
+                <div class="log-container" id="activity-log">
+                    <div class="log-entry">
+                        <span class="log-time">[00:00:00]</span>
+                        <span class="log-action">INIT</span>
+                        <span>Demo page loaded</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load ChatKit Widget -->
+    <script src="/js/chatkit-widget.js"></script>
+    
+    <script>
+        // Demo application state
+        const demoState = {
+            startTime: Date.now(),
+            sessionCount: 0,
+            messageCount: 0,
+            flowResponses: 0,
+            aiResponses: 0,
+            responseTimes: [],
+            currentSession: null,
+            isRunningTest: false
+        };
+
+        // Initialize demo
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDemo();
+            setupNetworkMonitoring();
+            updateConnectionStatus();
+            setInterval(updateAnalytics, 1000);
+            logActivity('READY', 'Demo environment initialized with network monitoring');
+        });
+
+        /**
+         * Initialize the demo environment
+         */
+        function initializeDemo() {
+            // Initialize ChatKit Widget with enhanced config
+            LightwaveChat.init({
+                apiUrl: '/api/chatkit',
+                organizationId: 'convoai',
+                position: 'bottom-right',
+                theme: 'convoai',
+                autoOpen: false,
+                showNotification: true,
+                enableFlows: true,
+                enableQuickActions: true,
+                debug: true
+            });
+
+            // Add keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.key === 'o') {
+                    e.preventDefault();
+                    openWidget();
+                }
+            });
+
+            logActivity('INIT', 'ChatKit widget initialized');
+        }
+
+        /**
+         * Update connection status
+         */
+        async function updateConnectionStatus() {
+            try {
+                const response = await fetch('/api/chatkit/health');
+                const status = await response.json();
+                
+                const statusEl = document.getElementById('connection-status');
+                const dot = statusEl.querySelector('.status-dot');
+                const text = statusEl.querySelector('span');
+                
+                if (status.success && status.status === 'ready') {
+                    dot.className = 'status-dot status-online';
+                    text.textContent = 'Connected';
+                    logActivity('CONN', 'Connected to ChatKit API');
+                } else {
+                    dot.className = 'status-dot status-offline';
+                    text.textContent = 'Service Unavailable';
+                }
+                
+            } catch (error) {
+                const statusEl = document.getElementById('connection-status');
+                const dot = statusEl.querySelector('.status-dot');
+                const text = statusEl.querySelector('span');
+                
+                dot.className = 'status-dot status-offline';
+                text.textContent = 'Connection Failed';
+                
+                logActivity('ERROR', 'Failed to connect to API');
+            }
+        }
+
+        /**
+         * Widget control functions
+         */
+        function openWidget() {
+            LightwaveChat.open();
+            logActivity('WIDGET', 'Widget opened');
+        }
+
+        function closeWidget() {
+            LightwaveChat.close();
+            logActivity('WIDGET', 'Widget closed');
+        }
+
+        function toggleWidget() {
+            LightwaveChat.toggle();
+            logActivity('WIDGET', 'Widget toggled');
+        }
+
+        function showNotification() {
+            LightwaveChat.showNotification();
+            logActivity('NOTIF', 'Notification shown');
+        }
+
+        /**
+         * Theme management
+         */
+        function setTheme(theme) {
+            // Update active theme button
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Apply theme to ChatKit widget
+            applyChatKitTheme(theme);
+            logActivity('THEME', `Theme changed to ${theme}`);
+        }
+
+        /**
+         * Apply theme to ChatKit widget
+         */
+        function applyChatKitTheme(theme) {
+            const widget = document.getElementById('lightwave-chat-widget');
+            if (!widget) return;
+
+            // Remove existing theme classes
+            widget.className = widget.className.replace(/lwcw-theme-\w+/g, '');
+            
+            // Add new theme class
+            widget.classList.add(`lwcw-theme-${theme}`);
+
+            // Apply theme-specific CSS variables
+            const themeConfigs = {
+                'convoai': {
+                    '--lwcw-primary': 'linear-gradient(135deg, #1e88e5 0%, #1565c0 100%)',
+                    '--lwcw-primary-hover': 'linear-gradient(135deg, #1976d2 0%, #0d47a1 100%)',
+                    '--lwcw-background': '#ffffff',
+                    '--lwcw-text': '#333333',
+                    '--lwcw-border': '#e3f2fd',
+                    '--lwcw-shadow': '0 20px 60px rgba(30, 136, 229, 0.15)'
+                },
+                'lightwave': {
+                    '--lwcw-primary': 'linear-gradient(135deg, #1e88e5 0%, #1565c0 100%)',
+                    '--lwcw-primary-hover': 'linear-gradient(135deg, #1976d2 0%, #0d47a1 100%)',
+                    '--lwcw-background': '#ffffff',
+                    '--lwcw-text': '#333333',
+                    '--lwcw-border': '#e2e8f0',
+                    '--lwcw-shadow': '0 20px 60px rgba(0, 0, 0, 0.15)'
+                },
+                'dark': {
+                    '--lwcw-primary': 'linear-gradient(135deg, #1f2937 0%, #374151 100%)',
+                    '--lwcw-primary-hover': 'linear-gradient(135deg, #111827 0%, #1f2937 100%)',
+                    '--lwcw-background': '#1f2937',
+                    '--lwcw-text': '#ffffff',
+                    '--lwcw-border': '#374151',
+                    '--lwcw-shadow': '0 20px 60px rgba(0, 0, 0, 0.5)'
+                },
+                'corporate': {
+                    '--lwcw-primary': 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%)',
+                    '--lwcw-primary-hover': 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)',
+                    '--lwcw-background': '#f8fafc',
+                    '--lwcw-text': '#1e293b',
+                    '--lwcw-border': '#cbd5e1',
+                    '--lwcw-shadow': '0 20px 60px rgba(30, 64, 175, 0.2)'
+                },
+                'sunset': {
+                    '--lwcw-primary': 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+                    '--lwcw-primary-hover': 'linear-gradient(135deg, #ea580c 0%, #dc2626 100%)',
+                    '--lwcw-background': '#fefbf3',
+                    '--lwcw-text': '#7c2d12',
+                    '--lwcw-border': '#fed7aa',
+                    '--lwcw-shadow': '0 20px 60px rgba(249, 115, 22, 0.3)'
+                },
+                'eco': {
+                    '--lwcw-primary': 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                    '--lwcw-primary-hover': 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    '--lwcw-background': '#f0fdf4',
+                    '--lwcw-text': '#14532d',
+                    '--lwcw-border': '#bbf7d0',
+                    '--lwcw-shadow': '0 20px 60px rgba(5, 150, 105, 0.2)'
+                },
+                'minimal': {
+                    '--lwcw-primary': 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
+                    '--lwcw-primary-hover': 'linear-gradient(135deg, #475569 0%, #334155 100%)',
+                    '--lwcw-background': '#ffffff',
+                    '--lwcw-text': '#0f172a',
+                    '--lwcw-border': '#f1f5f9',
+                    '--lwcw-shadow': '0 20px 60px rgba(0, 0, 0, 0.1)'
+                }
+            };
+
+            const config = themeConfigs[theme] || themeConfigs['convoai'];
+            
+            // Apply CSS variables to widget
+            Object.entries(config).forEach(([property, value]) => {
+                widget.style.setProperty(property, value);
+            });
+
+            // Update widget elements with theme
+            updateWidgetThemeElements(theme, config);
+        }
+
+        /**
+         * Update widget elements with theme
+         */
+        function updateWidgetThemeElements(theme, config) {
+            // Update toggle button
+            const toggleBtn = document.querySelector('.lwcw-toggle-button');
+            if (toggleBtn) {
+                toggleBtn.style.background = config['--lwcw-primary'];
+                toggleBtn.style.boxShadow = config['--lwcw-shadow'];
+            }
+
+            // Update header
+            const header = document.querySelector('.lwcw-header');
+            if (header) {
+                header.style.background = config['--lwcw-primary'];
+            }
+
+            // Update chat window
+            const chatWindow = document.querySelector('.lwcw-chat-window');
+            if (chatWindow) {
+                chatWindow.style.background = config['--lwcw-background'];
+                chatWindow.style.color = config['--lwcw-text'];
+                chatWindow.style.boxShadow = config['--lwcw-shadow'];
+            }
+
+            // Update message bubbles
+            const botBubbles = document.querySelectorAll('.lwcw-message.bot .lwcw-message-bubble');
+            botBubbles.forEach(bubble => {
+                if (theme === 'dark') {
+                    bubble.style.background = '#374151';
+                    bubble.style.color = '#ffffff';
+                } else {
+                    bubble.style.background = '#f1f3f4';
+                    bubble.style.color = config['--lwcw-text'];
+                }
+            });
+
+            const userBubbles = document.querySelectorAll('.lwcw-message.user .lwcw-message-bubble');
+            userBubbles.forEach(bubble => {
+                bubble.style.background = config['--lwcw-primary'];
+            });
+
+            // Update send button
+            const sendBtn = document.querySelector('.lwcw-send-btn');
+            if (sendBtn) {
+                sendBtn.style.background = config['--lwcw-primary'];
+            }
+
+            // Update department buttons
+            const deptBtns = document.querySelectorAll('.lwcw-dept-btn');
+            deptBtns.forEach(btn => {
+                if (theme === 'dark') {
+                    btn.style.background = '#374151';
+                    btn.style.borderColor = '#4b5563';
+                    btn.style.color = '#ffffff';
+                } else {
+                    btn.style.background = config['--lwcw-background'];
+                    btn.style.borderColor = config['--lwcw-border'];
+                    btn.style.color = config['--lwcw-text'];
+                }
+            });
+        }
+
+        /**
+         * Department testing
+         */
+        async function testDepartment(department) {
+            if (demoState.isRunningTest) {
+                alert('A test is already running. Please wait for it to complete.');
+                return;
+            }
+
+            demoState.isRunningTest = true;
+            logActivity('TEST', `Testing ${department} department`);
+            
+            try {
+                // Open widget and show the department selection
+                if (!LightwaveChat.isOpen()) {
+                    LightwaveChat.open();
+                    await sleep(2000);
+                }
+
+                // Start department chat in the widget
+                logActivity('WIDGET', `Opening ${department} department chat`);
+                LightwaveChat.startChat(department);
+                
+                // Wait for session establishment and greeting message
+                logActivity('DEBUG', `Waiting for ${department} session to establish...`);
+                const greetingReceived = await waitForGreeting();
+                
+                if (!greetingReceived) {
+                    logActivity('ERROR', `No greeting received for ${department} - session may not be ready`);
+                }
+
+                // Ensure widget is ready with session
+                logActivity('DEBUG', `Ensuring widget ready for ${department}...`);
+                const isReady = await ensureWidgetReady();
+                if (!isReady) {
+                    logActivity('ERROR', `Widget not ready for ${department} testing`);
+                    return;
+                }
+
+                // Department-specific test messages
+                const testMessages = {
+                    'sales': 'Hi, I\'m interested in your products. Can you tell me about pricing?',
+                    'technical': 'I\'m having trouble with my dimmer switch. Can you help?',
+                    'support': 'I need some general support with my account.',
+                    'billing': 'I have a question about my recent invoice.'
+                };
+                
+                const message = testMessages[department] || 'Hello, I need some help.';
+                logActivity('MSG', `Sending test message: "${message.substring(0, 30)}..."`);
+
+                // Short additional wait to ensure everything is stable
+                await sleep(500);
+
+                // Simplified approach - just send the message and monitor closely
+                logActivity('DEBUG', `Attempting to send: "${message}" to ${department}`);
+                
+                // Get initial state
+                const initialMessageCount = document.querySelectorAll('.lwcw-message').length;
+                const sessionId = window.LightwaveChat?.getCurrentSession?.();
+                
+                logActivity('DEBUG', `Initial state - Messages: ${initialMessageCount}, Session: ${sessionId}`);
+                
+                // Set message in input and send
+                const messageInput = document.getElementById('lwcw-message-input');
+                if (messageInput && sessionId) {
+                    messageInput.value = message;
+                    messageInput.focus();
+                    
+                    // Send the message
+                    const sendBtn = document.querySelector('.lwcw-send-btn');
+                    if (sendBtn) {
+                        logActivity('DEBUG', 'Clicking send button...');
+                        sendBtn.click();
+                        
+                        // Monitor for changes over time
+                        let checkCount = 0;
+                        const monitorInterval = setInterval(() => {
+                            checkCount++;
+                            const currentMessages = document.querySelectorAll('.lwcw-message').length;
+                            const typingIndicator = document.getElementById('lwcw-typing');
+                            const isTyping = typingIndicator && typingIndicator.classList.contains('active');
+                            
+                            logActivity('DEBUG', `Check ${checkCount}: Messages=${currentMessages}, Typing=${isTyping}`);
+                            
+                            // Stop monitoring after 20 checks (4 seconds)
+                            if (checkCount >= 20) {
+                                clearInterval(monitorInterval);
+                                
+                                if (currentMessages > initialMessageCount + 1) {
+                                    logActivity('RESPONSE', `${department} bot responded after ${checkCount * 200}ms`);
+                                    logActivity('TEST', `${department} department test completed`);
+                                } else {
+                                    logActivity('WARNING', `No bot response detected after 4 seconds (Messages: ${currentMessages}/${initialMessageCount})`);
+                                }
+                            }
+                        }, 200);
+                        
+                        demoState.messageCount++;
+                        logActivity('SENT', `Message sent to ${department}`);
+                    } else {
+                        logActivity('ERROR', 'Send button not found');
+                    }
+                } else {
+                    logActivity('ERROR', `Cannot send - Input: ${!!messageInput}, Session: ${sessionId}`);
+                }
+            } catch (error) {
+                logActivity('ERROR', `Department test failed: ${error.message}`);
+            }
+
+            demoState.isRunningTest = false;
+        }
+
+        /**
+         * Automated test scenarios
+         */
+        async function runScenario(scenario) {
+            if (demoState.isRunningTest) {
+                alert('A test is already running. Please wait for it to complete.');
+                return;
+            }
+
+            demoState.isRunningTest = true;
+            logActivity('SCENARIO', `Running ${scenario} scenario`);
+            
+            // Update connection status to show test running
+            const statusEl = document.getElementById('connection-status');
+            const statusText = statusEl.querySelector('span');
+            const originalStatusText = statusText.textContent;
+            statusText.textContent = `Running ${scenario} test...`;
+
+            const scenarios = {
+                'product-inquiry': {
+                    department: 'sales',
+                    messages: [
+                        'Hi, I\'m interested in your smart dimmer switches',
+                        'What\'s the price for the 2-gang dimmer?',
+                        'Do you offer installation services?'
+                    ]
+                },
+                'technical-issue': {
+                    department: 'technical',
+                    messages: [
+                        'My smart dimmer is not responding',
+                        'I\'ve tried resetting it but it\'s still not working',
+                        'The LED keeps flashing red'
+                    ]
+                },
+                'billing-question': {
+                    department: 'billing',
+                    messages: [
+                        'I have a question about my recent order',
+                        'The charge amount seems incorrect',
+                        'Can you help me with a refund?'
+                    ]
+                },
+                'general-chat': {
+                    department: 'general',
+                    messages: [
+                        'Hello, I need some help',
+                        'I\'m new to smart home technology',
+                        'What would you recommend for a beginner?'
+                    ]
+                }
+            };
+
+            const config = scenarios[scenario];
+            if (!config) {
+                demoState.isRunningTest = false;
+                return;
+            }
+
+            try {
+                // First, open and show the widget for visual feedback
+                if (!LightwaveChat.isOpen()) {
+                    LightwaveChat.open();
+                    await sleep(2000);
+                }
+
+                // Start the appropriate department chat in the widget
+                logActivity('WIDGET', `Opening ${config.department} department`);
+                LightwaveChat.startChat(config.department);
+                await sleep(3000);
+
+                // Now run the scenario with proper widget integration
+                for (let i = 0; i < config.messages.length; i++) {
+                    const message = config.messages[i];
+                    logActivity('MSG', `Sending: "${message.substring(0, 30)}..."`);
+
+                    // Wait for the input to be ready and send message
+                    const success = await sendMessageThroughWidget(message);
+                    
+                    if (success) {
+                        demoState.messageCount++;
+                        logActivity('SENT', `Message ${i + 1}/${config.messages.length} sent via widget`);
+                        
+                        // Wait for bot response to appear
+                        await waitForBotResponse();
+                        logActivity('RESPONSE', `Bot response received for message ${i + 1}`);
+                        
+                        // Wait before next message
+                        await sleep(2000);
+                    } else {
+                        logActivity('ERROR', `Failed to send message ${i + 1} through widget`);
+                    }
+                }
+
+                logActivity('SCENARIO', `${scenario} scenario completed successfully`);
+            } catch (error) {
+                logActivity('ERROR', `Scenario failed: ${error.message}`);
+            }
+
+            // Restore status text
+            const statusElement = document.getElementById('connection-status');
+            const statusTextElement = statusElement.querySelector('span');
+            statusTextElement.textContent = 'Connected';
+
+            demoState.isRunningTest = false;
+        }
+
+        /**
+         * Send message through widget with proper event handling
+         */
+        async function sendMessageThroughWidget(message) {
+            return new Promise(async (resolve) => {
+                let attempts = 0;
+                const maxAttempts = 20;
+                
+                // Check session status first
+                if (window.LightwaveChatKit && window.LightwaveChatKit.getCurrentSession) {
+                    const sessionId = window.LightwaveChatKit.getCurrentSession();
+                    logActivity('DEBUG', `Widget session: ${sessionId || 'No session'}`);
+                    
+                    if (!sessionId) {
+                        logActivity('WARNING', 'No active session - this may cause response issues');
+                    }
+                }
+                
+                const sendInterval = setInterval(() => {
+                    attempts++;
+                    
+                    const messageInput = document.getElementById('lwcw-message-input');
+                    const inputArea = document.getElementById('lwcw-input');
+                    
+                    // Check if chat interface is ready
+                    if (messageInput && inputArea && inputArea.classList.contains('active')) {
+                        messageInput.value = message;
+                        
+                        // Focus and trigger input event
+                        messageInput.focus();
+                        messageInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        
+                        logActivity('DEBUG', `Attempting to send: "${message}"`);
+                        
+                        // Try clicking send button
+                        const sendBtn = document.querySelector('.lwcw-send-btn');
+                        if (sendBtn && !sendBtn.disabled) {
+                            sendBtn.click();
+                            logActivity('DEBUG', 'Send button clicked');
+                            clearInterval(sendInterval);
+                            resolve(true);
+                            return;
+                        }
+                        
+                        // Fallback to Enter key
+                        const enterEvent = new KeyboardEvent('keypress', {
+                            key: 'Enter',
+                            code: 'Enter',
+                            which: 13,
+                            keyCode: 13,
+                            bubbles: true
+                        });
+                        messageInput.dispatchEvent(enterEvent);
+                        logActivity('DEBUG', 'Enter key event dispatched');
+                        
+                        clearInterval(sendInterval);
+                        resolve(true);
+                        return;
+                    }
+                    
+                    if (attempts >= maxAttempts) {
+                        clearInterval(sendInterval);
+                        resolve(false);
+                    }
+                }, 200);
+            });
+        }
+
+        /**
+         * Ensure widget is ready and has session
+         */
+        async function ensureWidgetReady() {
+            return new Promise((resolve) => {
+                let attempts = 0;
+                const maxAttempts = 30; // 6 seconds max wait
+                
+                const checkInterval = setInterval(() => {
+                    attempts++;
+                    
+                    // Check if widget is initialized
+                    if (window.LightwaveChatKit && window.LightwaveChatKit.getCurrentSession) {
+                        const sessionId = window.LightwaveChatKit.getCurrentSession();
+                        const chatWindow = document.querySelector('#lwcw-widget');
+                        const inputArea = document.getElementById('lwcw-input');
+                        const messageInput = document.getElementById('lwcw-message-input');
+                        const chatMessages = document.querySelector('.lwcw-messages');
+                        
+                        // Check if session is ready, chat interface is active, and has messages (greeting)
+                        const hasMessages = chatMessages && chatMessages.children.length > 0;
+                        
+                        if (sessionId && chatWindow && inputArea && messageInput && chatMessages && 
+                            inputArea.classList.contains('active') && hasMessages) {
+                            logActivity('DEBUG', `Widget fully ready with session: ${sessionId} (${chatMessages.children.length} messages)`);
+                            clearInterval(checkInterval);
+                            resolve(true);
+                            return;
+                        } else if (chatWindow && inputArea && !sessionId) {
+                            // Widget exists but no session - may need to trigger session creation
+                            logActivity('DEBUG', 'Widget exists but no session - waiting for initialization');
+                        } else if (sessionId && !inputArea.classList.contains('active')) {
+                            logActivity('DEBUG', `Session ${sessionId} exists but interface not active yet`);
+                        }
+                    } else {
+                        logActivity('DEBUG', 'Widget not initialized yet');
+                    }
+                    
+                    if (attempts >= maxAttempts) {
+                        const sessionId = window.LightwaveChatKit?.getCurrentSession?.() || 'none';
+                        logActivity('WARNING', `Widget session not ready after 6 seconds. Session: ${sessionId}`);
+                        clearInterval(checkInterval);
+                        resolve(false);
+                    }
+                }, 200);
+            });
+        }
+
+        /**
+         * Test notification visibility
+         */
+        function testNotification() {
+            if (window.LightwaveChat) {
+                logActivity('DEBUG', 'Testing notification visibility...');
+                
+                // Check if notification element exists
+                const badge = document.getElementById('lwcw-notification');
+                if (badge) {
+                    logActivity('DEBUG', `Notification element found. Current classes: ${badge.className}`);
+                    logActivity('DEBUG', `Notification element styles: opacity=${badge.style.opacity}, display=${getComputedStyle(badge).display}`);
+                } else {
+                    logActivity('ERROR', 'Notification element not found in DOM');
+                    return;
+                }
+                
+                // Show notification
+                window.LightwaveChat.showNotification();
+                
+                setTimeout(() => {
+                    const hasActive = badge.classList.contains('active');
+                    logActivity('DEBUG', `After showNotification() - Has active class: ${hasActive}`);
+                    logActivity('DEBUG', `Computed styles - opacity: ${getComputedStyle(badge).opacity}, transform: ${getComputedStyle(badge).transform}`);
+                }, 100);
+                
+                logActivity('DEBUG', 'Notification should now be visible (red badge on chat button)');
+                
+                // Hide it after 5 seconds
+                setTimeout(() => {
+                    window.LightwaveChat.hideNotification();
+                    logActivity('DEBUG', 'Notification hidden');
+                }, 5000);
+            } else {
+                logActivity('ERROR', 'Widget not loaded');
+            }
+        }
+
+        /**
+         * Debug the widget state and functionality
+         */
+        async function debugWidget() {
+            logActivity('DEBUG', '=== WIDGET DEBUG START ===');
+            
+            // Check if widget is loaded
+            const widgetExists = !!window.LightwaveChat;
+            logActivity('DEBUG', `Widget loaded: ${widgetExists}`);
+            
+            if (widgetExists) {
+                // Check session
+                const session = window.LightwaveChat.getCurrentSession();
+                logActivity('DEBUG', `Session: ${session || 'none'}`);
+                
+                // Check if widget is open
+                const isOpen = window.LightwaveChat.isOpen();
+                logActivity('DEBUG', `Widget open: ${isOpen}`);
+                
+                // Check online status
+                const isOnline = window.LightwaveChat.isOnline();
+                logActivity('DEBUG', `Online: ${isOnline}`);
+                
+                // Check DOM elements
+                const widget = document.getElementById('lwcw-widget');
+                const input = document.getElementById('lwcw-message-input');
+                const messages = document.querySelector('.lwcw-messages');
+                const sendBtn = document.querySelector('.lwcw-send-btn');
+                
+                logActivity('DEBUG', `DOM - Widget: ${!!widget}, Input: ${!!input}, Messages: ${!!messages}, Send: ${!!sendBtn}`);
+                
+                if (messages) {
+                    const messageCount = messages.children.length;
+                    logActivity('DEBUG', `Message count: ${messageCount}`);
+                }
+                
+                // Test a simple message if session exists
+                if (session && input && sendBtn) {
+                    logActivity('DEBUG', 'Testing simple message send...');
+                    input.value = 'Debug test message';
+                    
+                    // Monitor what happens when we click send
+                    const initialCount = document.querySelectorAll('.lwcw-message').length;
+                    sendBtn.click();
+                    
+                    setTimeout(() => {
+                        const newCount = document.querySelectorAll('.lwcw-message').length;
+                        logActivity('DEBUG', `After send - Messages: ${newCount} (was ${initialCount})`);
+                    }, 2000);
+                }
+            }
+            
+            logActivity('DEBUG', '=== WIDGET DEBUG END ===');
+        }
+
+        /**
+         * Monitor network requests to see if API calls are being made
+         */
+        function setupNetworkMonitoring() {
+            // Override fetch to monitor API calls
+            const originalFetch = window.fetch;
+            window.fetch = async function(...args) {
+                const [url, options] = args;
+                
+                if (url.includes('/api/chatkit/sessions') && options?.method === 'POST') {
+                    logActivity('NETWORK', `API call detected: ${url}`);
+                    
+                    try {
+                        const response = await originalFetch.apply(this, args);
+                        const clonedResponse = response.clone();
+                        
+                        if (response.ok) {
+                            const data = await clonedResponse.json();
+                            logActivity('NETWORK', `API response success: ${data.success}`);
+                            
+                            // Log bot messages specifically
+                            if (data.messages) {
+                                data.messages.forEach((msg, i) => {
+                                    if (msg.role === 'assistant' || msg.type === 'assistant') {
+                                        logActivity('NETWORK', `Bot message ${i}: "${msg.content?.substring(0, 100)}..."`);
+                                    }
+                                });
+                            }
+                        } else {
+                            logActivity('NETWORK', `API error: ${response.status} ${response.statusText}`);
+                        }
+                        
+                        return response;
+                    } catch (error) {
+                        logActivity('NETWORK', `API exception: ${error.message}`);
+                        throw error;
+                    }
+                }
+                
+                return originalFetch.apply(this, args);
+            };
+        }
+
+        /**
+         * Log activity with timestamp
+         */
+        function logActivity(action, message) {
+            const logContainer = document.getElementById('activity-log');
+            if (!logContainer) return;
+
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            
+            const actionColors = {
+                'READY': '#4caf50',
+                'INIT': '#2196f3', 
+                'CONN': '#00bcd4',
+                'ERROR': '#f44336',
+                'WIDGET': '#ff9800',
+                'NOTIF': '#9c27b0',
+                'THEME': '#795548',
+                'TEST': '#3f51b5',
+                'DEBUG': '#607d8b',
+                'MSG': '#009688',
+                'RESPONSE': '#8bc34a',
+                'NETWORK': '#e91e63'
+            };
+            
+            logEntry.innerHTML = `
+                <span class="log-time">[${timestamp}]</span>
+                <span class="log-action" style="color: ${actionColors[action] || '#666'}">${action}</span>
+                <span>${message}</span>
+            `;
+            
+            logContainer.insertBefore(logEntry, logContainer.firstChild);
+            
+            // Keep only last 50 entries
+            while (logContainer.children.length > 50) {
+                logContainer.removeChild(logContainer.lastChild);
+            }
+        }
+
+        /**
+         * Update analytics display
+         */
+        function updateAnalytics() {
+            // Safely update elements that exist
+            const elements = {
+                'active-sessions': demoState.sessionCount,
+                'total-messages': demoState.messageCount,
+                'flow-responses': demoState.flowResponses,
+                'ai-responses': demoState.aiResponses,
+                'current-session': demoState.currentSession || 'None',
+                'current-department': 'General',
+                'flow-state': 'Active'
+            };
+            
+            // Update response time
+            const avgTime = demoState.responseTimes.length > 0 
+                ? Math.round(demoState.responseTimes.reduce((a, b) => a + b, 0) / demoState.responseTimes.length)
+                : 0;
+            elements['avg-response-time'] = avgTime + 'ms';
+            
+            // Update success rate
+            const successRate = demoState.messageCount > 0 
+                ? Math.round(((demoState.flowResponses + demoState.aiResponses) / demoState.messageCount) * 100)
+                : 100;
+            elements['success-rate'] = successRate + '%';
+            
+            // Safely update each element
+            Object.entries(elements).forEach(([id, value]) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = value;
+                }
+            });
+        }
+
+        /**
+         * Test direct API call to see response structure
+         */
+        async function testDirectAPI(message) {
+            try {
+                const sessionId = window.LightwaveChat?.getCurrentSession?.();
+                if (!sessionId) {
+                    logActivity('ERROR', 'No session for direct API test');
+                    return null;
+                }
+
+                logActivity('DEBUG', `Testing direct API call with session: ${sessionId}`);
+                
+                const response = await fetch(`/api/chatkit/sessions/${sessionId}/messages`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        type: 'user'
+                    })
+                });
+
+                if (!response.ok) {
+                    logActivity('ERROR', `Direct API failed: ${response.statusText}`);
+                    return null;
+                }
+
+                const result = await response.json();
+                logActivity('DEBUG', `Direct API response: ${JSON.stringify(result).substring(0, 200)}...`);
+                
+                return result;
+            } catch (error) {
+                logActivity('ERROR', `Direct API error: ${error.message}`);
+                return null;
+            }
+        }
+
+        /**
+         * Send message using widget's native API
+         */
+        async function sendMessageViaAPI(message) {
+            try {
+                // Check if we have a session first
+                const sessionId = window.LightwaveChat?.getCurrentSession?.();
+                if (!sessionId) {
+                    logActivity('ERROR', 'No active session for API send');
+                    return false;
+                }
+
+                // Set the message in the input field first (required by widget)
+                const messageInput = document.getElementById('lwcw-message-input');
+                if (messageInput) {
+                    messageInput.value = message;
+                    messageInput.focus();
+                    
+                    logActivity('DEBUG', `Set message in input: "${message}" (Session: ${sessionId})`);
+                } else {
+                    logActivity('ERROR', 'Message input field not found');
+                    return false;
+                }
+
+                // Use the widget's native sendMessage function
+                if (window.LightwaveChat && window.LightwaveChat.sendMessage) {
+                    logActivity('DEBUG', `Calling widget sendMessage...`);
+                    
+                    // The widget's sendMessage is async, but we need to wait for it
+                    await window.LightwaveChat.sendMessage();
+                    
+                    logActivity('DEBUG', 'Widget sendMessage completed');
+                    return true;
+                } else {
+                    logActivity('ERROR', 'Widget sendMessage API not available');
+                    return false;
+                }
+            } catch (error) {
+                logActivity('ERROR', `API send failed: ${error.message}`);
+                return false;
+            }
+        }
+
+        /**
+         * Wait for initial greeting message to appear (indicates session ready)
+         */
+        async function waitForGreeting() {
+            return new Promise((resolve) => {
+                let attempts = 0;
+                const maxAttempts = 25; // 5 seconds max wait
+                
+                const checkInterval = setInterval(() => {
+                    attempts++;
+                    
+                    const botMessages = document.querySelectorAll('.lwcw-message.bot');
+                    
+                    if (botMessages.length > 0) {
+                        logActivity('DEBUG', 'Bot greeting message detected');
+                        clearInterval(checkInterval);
+                        resolve(true);
+                        return;
+                    }
+                    
+                    if (attempts >= maxAttempts) {
+                        logActivity('WARNING', 'No greeting message appeared within timeout');
+                        clearInterval(checkInterval);
+                        resolve(false);
+                    }
+                }, 200);
+            });
+        }
+
+        /**
+         * Wait for bot response to appear in chat
+         */
+        async function waitForBotResponse() {
+            return new Promise((resolve) => {
+                let attempts = 0;
+                const maxAttempts = 30; // 6 seconds max wait (widget has 800ms delay)
+                const initialMessageCount = document.querySelectorAll('.lwcw-message').length;
+                
+                logActivity('DEBUG', `Waiting for bot response. Initial message count: ${initialMessageCount}`);
+                
+                const checkInterval = setInterval(() => {
+                    attempts++;
+                    
+                    // Check if new messages appeared
+                    const currentMessageCount = document.querySelectorAll('.lwcw-message').length;
+                    const typingIndicator = document.getElementById('lwcw-typing');
+                    const isTyping = typingIndicator && typingIndicator.classList.contains('active');
+                    
+                    // Debug logging every 5 attempts (1 second intervals)
+                    if (attempts % 5 === 0) {
+                        logActivity('DEBUG', `Messages: ${currentMessageCount}/${initialMessageCount}, Typing: ${isTyping}, Attempt: ${attempts}/${maxAttempts}`);
+                    }
+                    
+                    // If new messages appeared and not typing, response is complete
+                    if (currentMessageCount > initialMessageCount && !isTyping) {
+                        logActivity('DEBUG', `Bot response detected! Messages increased from ${initialMessageCount} to ${currentMessageCount}`);
+                        clearInterval(checkInterval);
+                        
+                        // Update analytics based on message types
+                        const botMessages = document.querySelectorAll('.lwcw-message.bot');
+                        const lastBotMessage = botMessages[botMessages.length - 1];
+                        
+                        if (lastBotMessage) {
+                            // Check if it's a flow message
+                            const flowBadge = lastBotMessage.querySelector('.lwcw-flow-badge');
+                            if (flowBadge) {
+                                demoState.flowResponses++;
+                                logActivity('DEBUG', 'Detected flow response');
+                            } else {
+                                demoState.aiResponses++;
+                                logActivity('DEBUG', 'Detected AI response');
+                            }
+                        }
+                        
+                        resolve(true);
+                        return;
+                    }
+                    
+                    if (attempts >= maxAttempts) {
+                        logActivity('WARNING', `Bot response timeout after ${maxAttempts * 200}ms. Messages: ${currentMessageCount}, Typing: ${isTyping}`);
+                        clearInterval(checkInterval);
+                        resolve(false); // Timeout
+                    }
+                }, 200);
+            });
+        }
+
+        /**
+         * Click department button in widget
+         */
+        async function clickDepartmentButton(department) {
+            return new Promise((resolve) => {
+                let attempts = 0;
+                const maxAttempts = 10;
+                
+                const clickInterval = setInterval(() => {
+                    attempts++;
+                    
+                    // Try to find and click the department button
+                    const buttons = document.querySelectorAll('.lwcw-dept-btn');
+                    let found = false;
+                    
+                    buttons.forEach(button => {
+                        const text = button.textContent.toLowerCase();
+                        if (text.includes(department.toLowerCase())) {
+                            button.click();
+                            found = true;
+                        }
+                    });
+                    
+                    // If no specific department button, click general
+                    if (!found && department === 'general') {
+                        const generalBtn = document.querySelector('.lwcw-general-btn');
+                        if (generalBtn) {
+                            generalBtn.click();
+                            found = true;
+                        }
+                    }
+                    
+                    if (found || attempts >= maxAttempts) {
+                        clearInterval(clickInterval);
+                        resolve(found);
+                    }
+                }, 200);
+            });
+        }
+
+        /**
+         * Send message to chat interface
+         */
+        async function sendMessageToChat(message) {
+            return new Promise((resolve) => {
+                let attempts = 0;
+                const maxAttempts = 15;
+                
+                const sendInterval = setInterval(() => {
+                    attempts++;
+                    
+                    const messageInput = document.getElementById('lwcw-message-input');
+                    if (messageInput && messageInput.style.display !== 'none') {
+                        messageInput.value = message;
+                        
+                        // Trigger send button or Enter key
+                        const sendBtn = document.querySelector('.lwcw-send-btn');
+                        if (sendBtn) {
+                            sendBtn.click();
+                        } else {
+                            // Simulate Enter key press
+                            const enterEvent = new KeyboardEvent('keypress', {
+                                key: 'Enter',
+                                code: 'Enter',
+                                which: 13,
+                                keyCode: 13
+                            });
+                            messageInput.dispatchEvent(enterEvent);
+                        }
+                        
+                        clearInterval(sendInterval);
+                        resolve(true);
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(sendInterval);
+                        resolve(false);
+                    }
+                }, 200);
+            });
+        }
+
+        /**
+         * Send custom message
+         */
+        async function sendCustomMessage() {
+            if (demoState.isRunningTest) {
+                alert('A test is already running. Please wait for it to complete.');
+                return;
+            }
+
+            const messageEl = document.getElementById('custom-message');
+            const message = messageEl.value.trim();
+            
+            if (!message) {
+                alert('Please enter a message to send');
+                return;
+            }
+
+            demoState.isRunningTest = true;
+            logActivity('CUSTOM', `Sending custom message: "${message.substring(0, 30)}..."`);
+
+            try {
+                // Open widget if not already open
+                if (!LightwaveChat.isOpen()) {
+                    LightwaveChat.open();
+                    await sleep(2000);
+                    
+                    // Start general chat
+                    LightwaveChat.startChat('general');
+                    await sleep(3000);
+                }
+
+                // Try API method first, fallback to DOM simulation
+                let success = await sendMessageViaAPI(message);
+                
+                if (!success) {
+                    logActivity('DEBUG', 'API method failed for custom message, trying DOM method...');
+                    success = await sendMessageThroughWidget(message);
+                }
+                
+                if (success) {
+                    demoState.messageCount++;
+                    messageEl.value = '';
+                    logActivity('SENT', 'Custom message sent');
+                    
+                    // Wait for bot response
+                    const responseReceived = await waitForBotResponse();
+                    if (responseReceived) {
+                        logActivity('RESPONSE', 'Bot response received for custom message');
+                        logActivity('CUSTOM', 'Custom message completed');
+                    } else {
+                        logActivity('WARNING', 'Custom message sent but no response received');
+                    }
+                } else {
+                    logActivity('ERROR', 'Failed to send custom message - ensure widget is open and ready');
+                }
+            } catch (error) {
+                logActivity('ERROR', `Custom message failed: ${error.message}`);
+            }
+
+            demoState.isRunningTest = false;
+        }
+
+        /**
+         * Widget settings
+         */
+        function updatePosition() {
+            const position = document.getElementById('widget-position').value;
+            // Would need to be implemented in the widget
+            logActivity('SETTING', `Position changed to ${position}`);
+        }
+
+        function updateOrgId() {
+            const orgId = document.getElementById('org-id').value;
+            // Would need to be implemented in the widget
+            logActivity('SETTING', `Organization ID changed to ${orgId}`);
+        }
+
+        /**
+         * Demo actions
+         */
+        function startDemo() {
+            logActivity('DEMO', 'Interactive demo started');
+            
+            if (!LightwaveChat.isOpen()) {
+                LightwaveChat.open();
+            }
+            
+            setTimeout(() => {
+                LightwaveChat.showNotification();
+            }, 2000);
+        }
+
+        async function runAllTests() {
+            if (demoState.isRunningTest) {
+                alert('Tests are already running. Please wait for completion.');
+                return;
+            }
+
+            logActivity('TEST', 'Running comprehensive test suite - this will open the chat widget');
+            
+            // Show visual indication that tests are running
+            const testButton = document.querySelector('button[onclick="runAllTests()"]');
+            const originalText = testButton.textContent;
+            testButton.textContent = '🧪 Running Tests...';
+            
+            const tests = ['sales', 'technical', 'support', 'billing'];
+            
+            for (let i = 0; i < tests.length; i++) {
+                const test = tests[i];
+                logActivity('SUITE', `Running test ${i + 1}/${tests.length}: ${test}`);
+                testButton.textContent = `🧪 Running ${test}... (${i + 1}/${tests.length})`;
+                
+                await testDepartment(test);
+                await sleep(1000);
+            }
+            
+            testButton.textContent = originalText;
+            logActivity('TEST', 'All tests completed successfully');
+        }
+
+        /**
+         * API request helper
+         */
+        async function makeApiRequest(path, method = 'GET', data = null) {
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                };
+
+                if (data && method !== 'GET') {
+                    options.body = JSON.stringify(data);
+                }
+
+                const response = await fetch(path, options);
+                return await response.json();
+            } catch (error) {
+                console.error('API request failed:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        /**
+         * Utility functions
+         */
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Monitor widget events (if available)
+        if (typeof window.addEventListener !== 'undefined') {
+            window.addEventListener('chatkit-session-created', function(event) {
+                demoState.sessionCount++;
+                demoState.currentSession = event.detail.sessionId;
+                logActivity('SESSION', `New session created: ${event.detail.sessionId}`);
+            });
+
+            window.addEventListener('chatkit-message-sent', function(event) {
+                demoState.messageCount++;
+                logActivity('MESSAGE', `Message sent to ${event.detail.department || 'unknown'}`);
+            });
+
+            window.addEventListener('chatkit-response-received', function(event) {
+                if (event.detail.isFlow) {
+                    demoState.flowResponses++;
+                } else {
+                    demoState.aiResponses++;
+                }
+                
+                if (event.detail.responseTime) {
+                    demoState.responseTimes.push(event.detail.responseTime);
+                    if (demoState.responseTimes.length > 10) {
+                        demoState.responseTimes.shift();
+                    }
+                }
+                
+                logActivity('RESPONSE', `${event.detail.isFlow ? 'Flow' : 'AI'} response received`);
+            });
+        }
+
+        // Console welcome message
+        console.log(`
+🔷 ConvoAI ChatKit Enhanced Demo
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎮 Enhanced testing interface loaded
+💬 Widget ready for ConvoAI interactions
+🔧 Network monitoring and analytics active
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Open the controls panel to start testing!
+        `);
+    </script>
+</body>
+</html>
+
+
+
+
+
+

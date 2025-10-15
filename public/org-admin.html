@@ -1,0 +1,905 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lightwave AI - Organization Admin Portal</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #4a5568;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header .admin-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-left: auto;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .nav-tab {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-tab.active {
+            background: #4299e1;
+            color: white;
+        }
+
+        .nav-tab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .tab-content {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section-description {
+            color: #666;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        .bot-config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .bot-config-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .bot-config-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .bot-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .bot-header i {
+            font-size: 1.2em;
+            color: #4299e1;
+        }
+
+        .bot-header h4 {
+            margin: 0;
+            flex-grow: 1;
+            color: #2d3748;
+        }
+
+        .bot-status {
+            background: #48bb78;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .bot-status.inactive {
+            background: #cbd5e0;
+        }
+
+        .bot-config-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .bot-config-actions .btn {
+            min-width: 160px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card h3 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .stat-card p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .section h3 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4299e1;
+        }
+
+        .btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: #3182ce;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #e53e3e;
+        }
+
+        .btn-danger:hover {
+            background: #c53030;
+        }
+
+        .btn-success {
+            background: #38a169;
+        }
+
+        .btn-success:hover {
+            background: #2f855a;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .users-table th,
+        .users-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .users-table th {
+            background: #4a5568;
+            color: white;
+            font-weight: 600;
+        }
+
+        .users-table tr:hover {
+            background: #f7fafc;
+        }
+
+        .department-badge {
+            display: inline-block;
+            background: #4299e1;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            margin: 2px;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background: #38a169;
+        }
+
+        .status-offline {
+            background: #e53e3e;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .ai-model-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #4299e1;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            max-width: 600px;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
+
+        .checkbox-group label:hover {
+            background: #f0f8ff;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert-success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .alert-error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .metric-card h4 {
+            color: #4a5568;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .metric-card p {
+            color: #718096;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-tabs {
+                flex-wrap: wrap;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="header">
+            <h1>
+                <i class="fas fa-cogs"></i>
+                Organization Admin Portal
+                <span style="font-size: 0.6em; color: #718096; font-weight: normal;">Lightwave AI</span>
+            </h1>
+            <div class="admin-info">
+                <span id="adminName">Loading...</span>
+                <button class="btn btn-danger" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <!-- Alert Messages -->
+        <div id="alertSuccess" class="alert alert-success">
+            <i class="fas fa-check-circle"></i> <span id="successMessage"></span>
+        </div>
+        <div id="alertError" class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i> <span id="errorMessage"></span>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('dashboard')">
+                <i class="fas fa-chart-line"></i> Dashboard
+            </button>
+            <button class="nav-tab" onclick="showTab('users')">
+                <i class="fas fa-users"></i> User Management
+            </button>
+            <button class="nav-tab" onclick="showTab('departments')">
+                <i class="fas fa-building"></i> Department Management
+            </button>
+            <button class="nav-tab" onclick="showTab('ai-config')">
+                <i class="fas fa-robot"></i> AI Configuration
+            </button>
+            <button class="nav-tab" onclick="showTab('analytics')">
+                <i class="fas fa-analytics"></i> Analytics
+            </button>
+            <button class="nav-tab" onclick="showTab('settings')">
+                <i class="fas fa-cog"></i> Organization Settings
+            </button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3 id="totalUsers">0</h3>
+                    <p><i class="fas fa-users"></i> Total Users</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="activeAgents">0</h3>
+                    <p><i class="fas fa-headset"></i> Active Agents</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="totalChats">0</h3>
+                    <p><i class="fas fa-comments"></i> Total Chats</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="aiInteractions">0</h3>
+                    <p><i class="fas fa-robot"></i> AI Interactions</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3><i class="fas fa-chart-bar"></i> Real-time Metrics</h3>
+                <div class="stats-grid">
+                    <div class="metric-card">
+                        <h4 id="onlineUsers">0</h4>
+                        <p>Online Users</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4 id="activeChats">0</h4>
+                        <p>Active Chats</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4 id="avgResponseTime">0s</h4>
+                        <p>Avg Response Time</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4 id="satisfactionRate">0%</h4>
+                        <p>Satisfaction Rate</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Management Tab -->
+        <div id="users" class="tab-content">
+            <div class="section">
+                <h3>
+                    <i class="fas fa-users"></i> User Management
+                    <button class="btn" onclick="showCreateUserModal()" style="margin-left: auto;">
+                        <i class="fas fa-plus"></i> Add New User
+                    </button>
+                </h3>
+                
+                <div class="form-group">
+                    <input type="text" id="userSearch" placeholder="Search users by name or email..." 
+                           onkeyup="filterUsers()">
+                </div>
+
+                <table class="users-table" id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Departments</th>
+                            <th>Status</th>
+                            <th>Last Active</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <!-- Users will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Department Management Tab -->
+        <div id="departments" class="tab-content">
+            <div class="section">
+                <h3><i class="fas fa-building"></i> Department Agent Assignments</h3>
+                <div id="departmentManagement">
+                    <!-- Department management interface will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Configuration Tab -->
+        <div id="ai-config" class="tab-content">
+            <div class="config-grid">
+                <div class="section">
+                    <h3><i class="fas fa-key"></i> API Configuration</h3>
+                    <div class="form-group">
+                        <label for="openaiApiKey">OpenAI API Key</label>
+                        <input type="password" id="openaiApiKey" placeholder="sk-...">
+                    </div>
+                    <div class="form-group">
+                        <label for="defaultModel">Default AI Model</label>
+                        <select id="defaultModel">
+                            <option value="gpt-4">GPT-4</option>
+                            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="maxTokens">Max Tokens per Response</label>
+                        <input type="number" id="maxTokens" value="2000" min="100" max="8000">
+                    </div>
+                    <button class="btn btn-success" onclick="saveAIConfig()">
+                        <i class="fas fa-save"></i> Save Configuration
+                    </button>
+                </div>
+
+                <div class="section">
+                    <h3><i class="fas fa-robot"></i> Department AI Agents</h3>
+                    <p class="section-description">Customize the names and personalities of your AI assistants for each department.</p>
+                    <div id="aiAgentsConfig" class="bot-config-grid">
+                        <!-- General/Main Assistant -->
+                        <div class="bot-config-card">
+                            <div class="bot-header">
+                                <i class="fas fa-user-tie"></i>
+                                <h4>General Assistant</h4>
+                                <span class="bot-status active">Active</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="generalBotName">Bot Name</label>
+                                <input type="text" id="generalBotName" value="Alex" placeholder="Enter bot name">
+                            </div>
+                            <div class="form-group">
+                                <label for="generalBotRole">Role Title</label>
+                                <input type="text" id="generalBotRole" value="Lightwave Assistant" placeholder="Enter role title">
+                            </div>
+                            <div class="form-group">
+                                <label for="generalBotStyle">Personality Style</label>
+                                <select id="generalBotStyle">
+                                    <option value="friendly, professional, and routing-focused">Friendly & Professional</option>
+                                    <option value="warm, welcoming, and helpful">Warm & Welcoming</option>
+                                    <option value="efficient, direct, and solution-oriented">Efficient & Direct</option>
+                                    <option value="casual, approachable, and conversational">Casual & Approachable</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Sales Assistant -->
+                        <div class="bot-config-card">
+                            <div class="bot-header">
+                                <i class="fas fa-handshake"></i>
+                                <h4>Sales Assistant</h4>
+                                <span class="bot-status active">Active</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="salesBotName">Bot Name</label>
+                                <input type="text" id="salesBotName" value="Sarah" placeholder="Enter bot name">
+                            </div>
+                            <div class="form-group">
+                                <label for="salesBotRole">Role Title</label>
+                                <input type="text" id="salesBotRole" value="Sales Specialist" placeholder="Enter role title">
+                            </div>
+                            <div class="form-group">
+                                <label for="salesBotStyle">Personality Style</label>
+                                <select id="salesBotStyle">
+                                    <option value="enthusiastic, solution-focused, and consultative">Enthusiastic & Consultative</option>
+                                    <option value="professional, knowledgeable, and persuasive">Professional & Persuasive</option>
+                                    <option value="friendly, helpful, and customer-focused">Friendly & Customer-Focused</option>
+                                    <option value="confident, experienced, and results-driven">Confident & Results-Driven</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Technical Assistant -->
+                        <div class="bot-config-card">
+                            <div class="bot-header">
+                                <i class="fas fa-cogs"></i>
+                                <h4>Technical Assistant</h4>
+                                <span class="bot-status active">Active</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="technicalBotName">Bot Name</label>
+                                <input type="text" id="technicalBotName" value="Mike" placeholder="Enter bot name">
+                            </div>
+                            <div class="form-group">
+                                <label for="technicalBotRole">Role Title</label>
+                                <input type="text" id="technicalBotRole" value="Technical Specialist" placeholder="Enter role title">
+                            </div>
+                            <div class="form-group">
+                                <label for="technicalBotStyle">Personality Style</label>
+                                <select id="technicalBotStyle">
+                                    <option value="analytical, precise, and solution-oriented">Analytical & Precise</option>
+                                    <option value="patient, thorough, and educational">Patient & Educational</option>
+                                    <option value="expert, methodical, and detail-focused">Expert & Methodical</option>
+                                    <option value="helpful, clear, and step-by-step">Helpful & Clear</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Support Assistant -->
+                        <div class="bot-config-card">
+                            <div class="bot-header">
+                                <i class="fas fa-life-ring"></i>
+                                <h4>Support Assistant</h4>
+                                <span class="bot-status active">Active</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="supportBotName">Bot Name</label>
+                                <input type="text" id="supportBotName" value="Emma" placeholder="Enter bot name">
+                            </div>
+                            <div class="form-group">
+                                <label for="supportBotRole">Role Title</label>
+                                <input type="text" id="supportBotRole" value="Customer Support Specialist" placeholder="Enter role title">
+                            </div>
+                            <div class="form-group">
+                                <label for="supportBotStyle">Personality Style</label>
+                                <select id="supportBotStyle">
+                                    <option value="empathetic, patient, and customer-focused">Empathetic & Patient</option>
+                                    <option value="caring, understanding, and solution-oriented">Caring & Understanding</option>
+                                    <option value="professional, reliable, and service-minded">Professional & Reliable</option>
+                                    <option value="friendly, responsive, and accommodating">Friendly & Responsive</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Billing Assistant -->
+                        <div class="bot-config-card">
+                            <div class="bot-header">
+                                <i class="fas fa-calculator"></i>
+                                <h4>Billing Assistant</h4>
+                                <span class="bot-status active">Active</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="billingBotName">Bot Name</label>
+                                <input type="text" id="billingBotName" value="David" placeholder="Enter bot name">
+                            </div>
+                            <div class="form-group">
+                                <label for="billingBotRole">Role Title</label>
+                                <input type="text" id="billingBotRole" value="Billing Specialist" placeholder="Enter role title">
+                            </div>
+                            <div class="form-group">
+                                <label for="billingBotStyle">Personality Style</label>
+                                <select id="billingBotStyle">
+                                    <option value="clear, professional, and detail-oriented">Clear & Professional</option>
+                                    <option value="helpful, accurate, and trustworthy">Helpful & Trustworthy</option>
+                                    <option value="efficient, organized, and precise">Efficient & Organized</option>
+                                    <option value="friendly, transparent, and reliable">Friendly & Transparent</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bot-config-actions">
+                        <button class="btn btn-success" onclick="saveBotConfiguration()">
+                            <i class="fas fa-save"></i> Save Bot Configuration
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetBotConfiguration()">
+                            <i class="fas fa-undo"></i> Reset to Defaults
+                        </button>
+                        <button class="btn btn-info" onclick="testBotPersonalities()">
+                            <i class="fas fa-robot"></i> Test Bot Responses
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3><i class="fas fa-brain"></i> AI Behavior Settings</h3>
+                <div class="config-grid">
+                    <div class="form-group">
+                        <label for="aiTemperature">Response Creativity (Temperature)</label>
+                        <input type="range" id="aiTemperature" min="0" max="1" step="0.1" value="0.7">
+                        <span id="temperatureValue">0.7</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="aiPresencePenalty">Presence Penalty</label>
+                        <input type="range" id="aiPresencePenalty" min="0" max="2" step="0.1" value="0.6">
+                        <span id="presencePenaltyValue">0.6</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analytics" class="tab-content">
+            <div class="section">
+                <h3><i class="fas fa-chart-line"></i> Chat Analytics</h3>
+                <div class="stats-grid">
+                    <div class="metric-card">
+                        <h4 id="dailyChats">0</h4>
+                        <p>Daily Chats</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4 id="weeklyChats">0</h4>
+                        <p>Weekly Chats</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4 id="monthlyChats">0</h4>
+                        <p>Monthly Chats</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4 id="resolvedChats">0%</h4>
+                        <p>Resolution Rate</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3><i class="fas fa-chart-pie"></i> Department Performance</h3>
+                <div id="departmentStats">
+                    <!-- Department statistics will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Organization Settings Tab -->
+        <div id="settings" class="tab-content">
+            <div class="section">
+                <h3><i class="fas fa-building"></i> Organization Profile</h3>
+                <div class="config-grid">
+                    <div class="form-group">
+                        <label for="orgName">Organization Name</label>
+                        <input type="text" id="orgName" value="Lightwave AI">
+                    </div>
+                    <div class="form-group">
+                        <label for="orgDomain">Domain</label>
+                        <input type="text" id="orgDomain" value="lightwave">
+                    </div>
+                    <div class="form-group">
+                        <label for="maxConcurrentChats">Max Concurrent Chats per Agent</label>
+                        <input type="number" id="maxConcurrentChats" value="5" min="1" max="20">
+                    </div>
+                    <div class="form-group">
+                        <label for="chatTimeout">Chat Timeout (minutes)</label>
+                        <input type="number" id="chatTimeout" value="30" min="5" max="120">
+                    </div>
+                </div>
+                <button class="btn btn-success" onclick="saveOrgSettings()">
+                    <i class="fas fa-save"></i> Save Settings
+                </button>
+            </div>
+
+            <div class="section">
+                <h3><i class="fas fa-shield-alt"></i> Security Settings</h3>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="requireMFA"> Require Multi-Factor Authentication
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="enableLogging"> Enable Detailed Logging
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="allowGuestChat"> Allow Guest Chat
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit User Modal -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeUserModal()">&times;</button>
+            <h2 id="userModalTitle">Create New User</h2>
+            
+            <div class="form-group">
+                <label for="userName">Username</label>
+                <input type="text" id="userName" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="userEmail">Email</label>
+                <input type="email" id="userEmail" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="userRole">Role</label>
+                <select id="userRole" onchange="toggleDepartmentSelection()">
+                    <option value="customer">Customer</option>
+                    <option value="agent">Agent</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="departmentGroup" style="display: none;">
+                <label>Departments</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" value="general"> General</label>
+                    <label><input type="checkbox" value="sales"> Sales</label>
+                    <label><input type="checkbox" value="technical"> Technical</label>
+                    <label><input type="checkbox" value="support"> Support</label>
+                    <label><input type="checkbox" value="billing"> Billing</label>
+                </div>
+            </div>
+            
+            <div class="form-group" id="passwordGroup">
+                <label for="userPassword">Password</label>
+                <input type="password" id="userPassword" required>
+            </div>
+            
+            <div style="margin-top: 30px; text-align: right;">
+                <button class="btn" onclick="closeUserModal()">Cancel</button>
+                <button class="btn btn-success" onclick="saveUser()">
+                    <i class="fas fa-save"></i> Save User
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/org-admin.js"></script>
+</body>
+</html>

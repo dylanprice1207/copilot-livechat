@@ -1,0 +1,429 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Department Management - Lightwave</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/agent.css">
+    <style>
+        .management-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .agent-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .agent-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .agent-info h3 {
+            margin: 0 0 5px 0;
+            color: #495057;
+        }
+        .agent-info .role-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .role-admin { background: #dc3545; color: white; }
+        .role-agent { background: #007bff; color: white; }
+        .status-online { color: #28a745; }
+        .status-offline { color: #6c757d; }
+        .departments-section {
+            margin: 15px 0;
+        }
+        .departments-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 10px 0;
+        }
+        .dept-tag {
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .dept-general { background: #6c757d; color: white; }
+        .dept-sales { background: #28a745; color: white; }
+        .dept-technical { background: #007bff; color: white; }
+        .dept-support { background: #17a2b8; color: white; }
+        .dept-billing { background: #ffc107; color: black; }
+        .edit-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .edit-btn:hover {
+            background: #0056b3;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal-content {
+            position: relative;
+            background: white;
+            margin: 5% auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 10px;
+        }
+        .close {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            font-size: 28px;
+            cursor: pointer;
+        }
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            background: #f8f9fa;
+        }
+        .checkbox-item input {
+            margin-right: 10px;
+        }
+        .dept-description {
+            font-size: 12px;
+            color: #6c757d;
+            margin-left: 25px;
+        }
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="management-container">
+            <div class="header">
+                <h1>ðŸ¢ Lightwave Agent Department Management</h1>
+                <p>Manage which departments each agent can access</p>
+            </div>
+
+            <!-- Statistics -->
+            <div class="stats-section" id="statsSection">
+                <!-- Stats will be loaded here -->
+            </div>
+
+            <!-- Agents Grid -->
+            <div class="agents-grid" id="agentsGrid">
+                <!-- Agents will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Agent Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit Agent Departments</h2>
+            <div id="editForm">
+                <div>
+                    <strong>Agent: </strong><span id="editAgentName"></span>
+                </div>
+                <div>
+                    <strong>Role: </strong><span id="editAgentRole"></span>
+                </div>
+                
+                <h3>Department Access:</h3>
+                <div class="checkbox-group" id="departmentCheckboxes">
+                    <!-- Department checkboxes will be loaded here -->
+                </div>
+
+                <div style="margin-top: 20px; text-align: right;">
+                    <button id="cancelEdit" class="btn" style="background: #6c757d; color: white; margin-right: 10px;">Cancel</button>
+                    <button id="saveEdit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class AgentDepartmentManager {
+            constructor() {
+                this.agents = [];
+                this.currentEditingAgent = null;
+                this.departmentInfo = {
+                    general: { name: 'General Chat', description: 'Main hub and routing', color: 'general' },
+                    sales: { name: 'Sales Department', description: 'Product sales and pricing', color: 'sales' },
+                    technical: { name: 'Technical Support', description: 'Technical issues and troubleshooting', color: 'technical' },
+                    support: { name: 'Customer Support', description: 'General customer assistance', color: 'support' },
+                    billing: { name: 'Billing Department', description: 'Billing and payment support', color: 'billing' }
+                };
+                
+                this.init();
+            }
+
+            async init() {
+                this.setupEventListeners();
+                await this.loadAgents();
+                this.renderStats();
+            }
+
+            setupEventListeners() {
+                // Modal controls
+                const modal = document.getElementById('editModal');
+                const closeBtn = document.querySelector('.close');
+                const cancelBtn = document.getElementById('cancelEdit');
+                const saveBtn = document.getElementById('saveEdit');
+
+                closeBtn.onclick = () => modal.style.display = 'none';
+                cancelBtn.onclick = () => modal.style.display = 'none';
+                saveBtn.onclick = () => this.saveAgentDepartments();
+
+                window.onclick = (event) => {
+                    if (event.target === modal) {
+                        modal.style.display = 'none';
+                    }
+                };
+            }
+
+            async loadAgents() {
+                try {
+                    const response = await fetch('/api/agents/agents');
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.agents = data.agents;
+                        this.renderAgents();
+                    } else {
+                        console.error('Failed to load agents:', data.message);
+                    }
+                } catch (error) {
+                    console.error('Error loading agents:', error);
+                }
+            }
+
+            renderStats() {
+                const statsSection = document.getElementById('statsSection');
+                const totalAgents = this.agents.length;
+                const onlineAgents = this.agents.filter(a => a.isOnline).length;
+                
+                // Count agents by department
+                const deptCounts = {};
+                Object.keys(this.departmentInfo).forEach(dept => deptCounts[dept] = 0);
+                
+                this.agents.forEach(agent => {
+                    agent.departments.forEach(dept => {
+                        if (deptCounts[dept] !== undefined) {
+                            deptCounts[dept]++;
+                        }
+                    });
+                });
+
+                statsSection.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-number">${totalAgents}</div>
+                        <div>Total Agents</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${onlineAgents}</div>
+                        <div>Online Now</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${deptCounts.sales}</div>
+                        <div>Sales Agents</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${deptCounts.technical}</div>
+                        <div>Technical Agents</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${deptCounts.support}</div>
+                        <div>Support Agents</div>
+                    </div>
+                `;
+            }
+
+            renderAgents() {
+                const agentsGrid = document.getElementById('agentsGrid');
+                
+                agentsGrid.innerHTML = this.agents.map(agent => `
+                    <div class="agent-card">
+                        <div class="agent-header">
+                            <div class="agent-info">
+                                <h3>
+                                    ${agent.username} 
+                                    <span class="role-badge role-${agent.role}">${agent.role.toUpperCase()}</span>
+                                    <span class="status-${agent.isOnline ? 'online' : 'offline'}">
+                                        ${agent.isOnline ? 'ðŸŸ¢ Online' : 'ðŸ”´ Offline'}
+                                    </span>
+                                </h3>
+                                <div style="font-size: 12px; color: #6c757d;">
+                                    ${agent.email} | Last active: ${new Date(agent.lastActive).toLocaleString()}
+                                </div>
+                            </div>
+                            <button class="edit-btn" onclick="agentManager.editAgent('${agent.id}')">
+                                Edit
+                            </button>
+                        </div>
+                        
+                        <div class="departments-section">
+                            <strong>Department Access:</strong>
+                            <div class="departments-list">
+                                ${agent.departments.length > 0 
+                                    ? agent.departments.map(dept => `
+                                        <span class="dept-tag dept-${dept}">
+                                            ${this.departmentInfo[dept]?.name || dept}
+                                        </span>
+                                    `).join('')
+                                    : '<span style="color: #6c757d; font-style: italic;">No departments assigned</span>'
+                                }
+                            </div>
+                        </div>
+
+                        ${agent.agentProfile ? `
+                            <div style="font-size: 12px; color: #6c757d; margin-top: 10px;">
+                                Max chats: ${agent.agentProfile.maxConcurrentChats} | 
+                                Level: ${agent.agentProfile.skillLevel} |
+                                Auto-assign: ${agent.agentProfile.autoAssign ? 'Yes' : 'No'}
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+            }
+
+            editAgent(agentId) {
+                const agent = this.agents.find(a => a.id === agentId);
+                if (!agent) return;
+
+                this.currentEditingAgent = agent;
+                
+                // Populate modal
+                document.getElementById('editAgentName').textContent = agent.username;
+                document.getElementById('editAgentRole').textContent = agent.role;
+                
+                // Create department checkboxes
+                const checkboxContainer = document.getElementById('departmentCheckboxes');
+                checkboxContainer.innerHTML = Object.entries(this.departmentInfo).map(([deptId, info]) => `
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="dept_${deptId}" value="${deptId}" 
+                               ${agent.departments.includes(deptId) ? 'checked' : ''}>
+                        <label for="dept_${deptId}">
+                            <strong>${info.name}</strong>
+                            <div class="dept-description">${info.description}</div>
+                        </label>
+                    </div>
+                `).join('');
+
+                // Show modal
+                document.getElementById('editModal').style.display = 'block';
+            }
+
+            async saveAgentDepartments() {
+                if (!this.currentEditingAgent) return;
+
+                // Get selected departments
+                const checkboxes = document.querySelectorAll('#departmentCheckboxes input[type="checkbox"]');
+                const selectedDepartments = Array.from(checkboxes)
+                    .filter(cb => cb.checked)
+                    .map(cb => cb.value);
+
+                try {
+                    const response = await fetch(`/api/agents/agent/${this.currentEditingAgent.id}/departments`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            departments: selectedDepartments
+                        })
+                    });
+
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // Update local agent data
+                        const agentIndex = this.agents.findIndex(a => a.id === this.currentEditingAgent.id);
+                        if (agentIndex !== -1) {
+                            this.agents[agentIndex].departments = selectedDepartments;
+                        }
+                        
+                        // Refresh display
+                        this.renderAgents();
+                        this.renderStats();
+                        
+                        // Close modal
+                        document.getElementById('editModal').style.display = 'none';
+                        
+                        alert('Agent departments updated successfully!');
+                    } else {
+                        alert('Error updating agent departments: ' + data.message);
+                    }
+                } catch (error) {
+                    console.error('Error saving agent departments:', error);
+                    alert('Error saving changes. Please try again.');
+                }
+            }
+        }
+
+        // Initialize when page loads
+        let agentManager;
+        document.addEventListener('DOMContentLoaded', () => {
+            agentManager = new AgentDepartmentManager();
+        });
+    </script>
+</body>
+</html>

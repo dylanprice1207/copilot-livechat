@@ -1,0 +1,412 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lightwave ChatKit - Flow Integration Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .main {
+            flex: 1;
+            padding: 4rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hero {
+            text-align: center;
+            color: white;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            margin-bottom: 3rem;
+            opacity: 0.9;
+            line-height: 1.8;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .feature:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .feature h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature p {
+            opacity: 0.8;
+            font-size: 0.95rem;
+        }
+
+        .cta-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 3rem;
+            border-radius: 20px;
+            margin: 4rem 0;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .cta-section h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .cta-section p {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 2rem;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: white;
+            color: #1e88e5;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .status-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #51cf66;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .demo-controls {
+            position: fixed;
+            bottom: 120px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            min-width: 250px;
+        }
+
+        .demo-controls h4 {
+            margin-bottom: 1rem;
+            color: #333;
+            font-size: 1rem;
+        }
+
+        .demo-controls button {
+            width: 100%;
+            margin-bottom: 0.5rem;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .demo-controls button:hover {
+            background: #f8f9fa;
+            border-color: #1e88e5;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .demo-controls {
+                display: none;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                min-width: 200px;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    ðŸ’¬ Lightwave ChatKit
+                </div>
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span>Flow Integration Active</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="hero">
+                <h1>Smart Chat with Flow Integration</h1>
+                <p>Experience our next-generation chat widget with intelligent flow routing, AI assistance, and seamless customer support integration.</p>
+                
+                <div class="features">
+                    <div class="feature">
+                        <span class="feature-icon">ðŸ¤–</span>
+                        <h3>AI-Powered</h3>
+                        <p>Intelligent responses powered by advanced AI with flow-based conversation management</p>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-icon">âš¡</span>
+                        <h3>Flow Integration</h3>
+                        <p>Smart routing through predefined conversation flows with quick actions and guided interactions</p>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-icon">ðŸŽ¨</span>
+                        <h3>Beautiful Design</h3>
+                        <p>Modern, responsive design that adapts to your brand and provides excellent user experience</p>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-icon">ðŸ“±</span>
+                        <h3>Mobile Ready</h3>
+                        <p>Fully responsive design that works perfectly on all devices and screen sizes</p>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-icon">ðŸš€</span>
+                        <h3>Real-time</h3>
+                        <p>Instant messaging with typing indicators, message status, and live agent handoff</p>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-icon">ðŸ”’</span>
+                        <h3>Secure</h3>
+                        <p>Enterprise-grade security with encrypted communications and data protection</p>
+                    </div>
+                </div>
+
+                <div class="cta-section">
+                    <h2>Ready to Experience the Future of Customer Support?</h2>
+                    <p>Try our intelligent chat widget with flow integration - click the chat button to start!</p>
+                    <div class="cta-buttons">
+                        <button class="btn btn-primary" onclick="LightwaveChat.open()">
+                            ðŸ’¬ Open Chat Widget
+                        </button>
+                        <button class="btn btn-secondary" onclick="LightwaveChat.showNotification()">
+                            ðŸ”” Test Notification
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Demo Controls -->
+    <div class="demo-controls">
+        <h4>ðŸ§ª Demo Controls</h4>
+        <button onclick="LightwaveChat.open()">Open Widget</button>
+        <button onclick="LightwaveChat.close()">Close Widget</button>
+        <button onclick="LightwaveChat.toggle()">Toggle Widget</button>
+        <button onclick="LightwaveChat.showNotification()">Show Notification</button>
+        <button onclick="LightwaveChat.hideNotification()">Hide Notification</button>
+        <button onclick="showWidgetStatus()">Show Status</button>
+    </div>
+
+    <!-- Load ChatKit Widget -->
+    <script src="/js/chatkit-widget.js"></script>
+    <script>
+        // Initialize the ChatKit Widget
+        LightwaveChat.init({
+            apiUrl: '/api/chatkit',
+            organizationId: 'lightwave',
+            position: 'bottom-right',
+            theme: 'lightwave',
+            autoOpen: false,
+            showNotification: true,
+            enableFlows: true,
+            enableQuickActions: true
+        });
+
+        // Demo functions
+        function showWidgetStatus() {
+            alert(`
+Widget Status:
+- Open: ${LightwaveChat.isOpen()}
+- Online: ${LightwaveChat.isOnline()}
+- Session: ${LightwaveChat.getCurrentSession() || 'None'}
+- Flow State: ${LightwaveChat.getFlowState() ? 'Active' : 'None'}
+            `);
+        }
+
+        // Auto-show notification after 5 seconds for demo
+        setTimeout(() => {
+            if (!LightwaveChat.isOpen()) {
+                LightwaveChat.showNotification();
+            }
+        }, 5000);
+
+        // Add some interaction logging for demo
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.lwcw-dept-btn')) {
+                console.log('Department selected:', e.target.textContent.trim());
+            }
+        });
+
+        // Welcome message for developers
+        console.log(`
+ðŸš€ Lightwave ChatKit Widget Loaded!
+
+Features:
+âœ… Flow Integration
+âœ… AI Assistant
+âœ… Quick Actions
+âœ… Department Routing
+âœ… Real-time Messaging
+âœ… Mobile Responsive
+âœ… Notification System
+
+API:
+- LightwaveChat.open()
+- LightwaveChat.close()
+- LightwaveChat.toggle()
+- LightwaveChat.showNotification()
+- LightwaveChat.isOpen()
+- LightwaveChat.isOnline()
+
+Try clicking the chat button to start!
+        `);
+    </script>
+</body>
+</html>

@@ -1,0 +1,329 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Website - Widget Demo</title>
+    <style>
+        /* Your existing website styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            background: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+            color: white;
+            text-align: center;
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+
+        .header p {
+            margin: 0.5rem 0 0 0;
+            opacity: 0.9;
+        }
+
+        .content {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .content h2 {
+            color: #333;
+            border-bottom: 2px solid #1e88e5;
+            padding-bottom: 0.5rem;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .feature {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid #1e88e5;
+        }
+
+        .feature h3 {
+            color: #333;
+            margin-top: 0;
+        }
+
+        .demo-controls {
+            background: #e3f2fd;
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+
+        .demo-controls h3 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+
+        .btn {
+            background: #1e88e5;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 0.5rem;
+            font-size: 1rem;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background: #1976d2;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .code-block {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 1rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: #666;
+            border-top: 1px solid #eee;
+            margin-top: 3rem;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Your website header -->
+    <div class="header">
+        <h1>Welcome to Our Website</h1>
+        <p>Experience the power of AI-powered customer support</p>
+    </div>
+
+    <!-- Your website content -->
+    <div class="container">
+        <div class="content">
+            <h2>ðŸš€ Live ChatKit Widget Demo</h2>
+            <p>This page demonstrates how the Lightwave ChatKit widget can be seamlessly integrated into any website. The chat widget provides instant AI-powered support with intelligent routing to different departments.</p>
+
+            <div class="highlight">
+                <strong>ðŸ‘€ Look for the chat widget in the bottom-right corner!</strong> 
+                Click it to start a conversation with our AI assistant.
+            </div>
+
+            <div class="features">
+                <div class="feature">
+                    <h3>ðŸ¤– AI-Powered Support</h3>
+                    <p>Intelligent responses powered by advanced AI technology. Get instant answers to technical questions, product information, and troubleshooting guidance.</p>
+                </div>
+                
+                <div class="feature">
+                    <h3>ðŸŽ¯ Smart Department Routing</h3>
+                    <p>Automatically route customers to Sales, Technical Support, Billing, or General inquiries based on their needs.</p>
+                </div>
+                
+                <div class="feature">
+                    <h3>ðŸ’¬ Real-Time Chat</h3>
+                    <p>Instant messaging with typing indicators, formatted responses, and seamless conversation flow.</p>
+                </div>
+                
+                <div class="feature">
+                    <h3>ðŸ“± Mobile Responsive</h3>
+                    <p>Works perfectly on desktop, tablet, and mobile devices with adaptive layout and touch-friendly interface.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <h2>ðŸŽ® Interactive Demo Controls</h2>
+            <div class="demo-controls">
+                <h3>Try these widget functions:</h3>
+                <button class="btn" onclick="LightwaveChat.open()">Open Chat Widget</button>
+                <button class="btn" onclick="LightwaveChat.close()">Close Chat Widget</button>
+                <button class="btn" onclick="LightwaveChat.toggle()">Toggle Chat Widget</button>
+                <button class="btn" onclick="LightwaveChat.showNotification()">Show Notification</button>
+                <button class="btn btn-secondary" onclick="testAutoMessage()">Send Test Message</button>
+            </div>
+            
+            <p><strong>Status:</strong> Widget is <span id="widget-status" style="color: #28a745;">Loading...</span></p>
+        </div>
+
+        <div class="content">
+            <h2>ðŸ› ï¸ Implementation Guide</h2>
+            <p>Adding the ChatKit widget to your website is simple. Just include the widget script and initialize it:</p>
+
+            <h3>Step 1: Include the Widget Script</h3>
+            <div class="code-block">
+&lt;!-- Add this before closing &lt;/body&gt; tag --&gt;
+&lt;script src="https://yoursite.com/js/chatkit-widget.js"&gt;&lt;/script&gt;</div>
+
+            <h3>Step 2: Initialize the Widget</h3>
+            <div class="code-block">
+&lt;script&gt;
+  // Initialize the widget with your configuration
+  LightwaveChat.init({
+    apiUrl: 'https://yoursite.com/api/chatkit',
+    organizationId: 'your-organization-id',
+    position: 'bottom-right',     // bottom-left, top-right, top-left
+    theme: 'lightwave',           // Your custom theme
+    autoOpen: false,              // Auto-open after page load
+    showNotification: true        // Show notification badge
+  });
+&lt;/script&gt;</div>
+
+            <h3>Step 3: Customize (Optional)</h3>
+            <div class="code-block">
+// Programmatically control the widget
+LightwaveChat.open();           // Open the widget
+LightwaveChat.close();          // Close the widget
+LightwaveChat.toggle();         // Toggle open/close
+LightwaveChat.showNotification(); // Show notification badge
+
+// Send a message programmatically
+LightwaveChat.sendMessage('Hello, I need help');
+
+// Check widget status
+console.log(LightwaveChat.isOpen());   // true/false
+console.log(LightwaveChat.isOnline()); // true/false</div>
+
+            <h3>Available Departments</h3>
+            <div class="features">
+                <div class="feature">
+                    <h3>ðŸ’° Sales</h3>
+                    <p>Product information, pricing, demos, and purchase assistance.</p>
+                </div>
+                <div class="feature">
+                    <h3>ðŸ”§ Technical</h3>
+                    <p>Installation help, troubleshooting, configuration, and technical guidance.</p>
+                </div>
+                <div class="feature">
+                    <h3>ðŸŽ§ Support</h3>
+                    <p>Account help, product support, and general customer service.</p>
+                </div>
+                <div class="feature">
+                    <h3>ðŸ’³ Billing</h3>
+                    <p>Payment questions, billing issues, and account management.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <h2>âœ¨ Key Features</h2>
+            <ul>
+                <li><strong>Zero Configuration Required:</strong> Works out of the box with sensible defaults</li>
+                <li><strong>Lightweight & Fast:</strong> Minimal impact on your website's performance</li>
+                <li><strong>Fully Customizable:</strong> Match your brand colors and styling</li>
+                <li><strong>Mobile Optimized:</strong> Responsive design for all screen sizes</li>
+                <li><strong>Smart AI Responses:</strong> Context-aware answers with HTML formatting</li>
+                <li><strong>Department Routing:</strong> Automatically route to the right team</li>
+                <li><strong>Typing Indicators:</strong> Real-time chat experience</li>
+                <li><strong>Notification System:</strong> Alert users to new messages</li>
+                <li><strong>Privacy Focused:</strong> Secure communication with no data tracking</li>
+                <li><strong>Easy Integration:</strong> Works with any website or CMS</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Â© 2024 Your Company. Powered by Lightwave ChatKit Widget.</p>
+        <p>This demo shows real AI-powered chat functionality. Try asking about Lightwave products!</p>
+    </div>
+
+    <!-- ChatKit Widget Integration -->
+    <script src="/js/chatkit-widget.js"></script>
+    <script>
+        // Initialize the ChatKit Widget
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize with custom configuration
+            LightwaveChat.init({
+                apiUrl: '/api/chatkit',
+                organizationId: 'lightwave',
+                position: 'bottom-right',
+                theme: 'lightwave',
+                autoOpen: false,
+                showNotification: true,
+                zIndex: 999999
+            });
+
+            // Show notification after a delay to grab attention
+            setTimeout(() => {
+                LightwaveChat.showNotification();
+            }, 3000);
+
+            // Update status indicator
+            updateWidgetStatus();
+            setInterval(updateWidgetStatus, 5000);
+        });
+
+        // Update widget status display
+        function updateWidgetStatus() {
+            const statusEl = document.getElementById('widget-status');
+            if (statusEl) {
+                if (LightwaveChat.isOnline()) {
+                    statusEl.textContent = 'Online and Ready';
+                    statusEl.style.color = '#28a745';
+                } else {
+                    statusEl.textContent = 'Connecting...';
+                    statusEl.style.color = '#ffc107';
+                }
+            }
+        }
+
+        // Demo function to send a test message
+        function testAutoMessage() {
+            LightwaveChat.open();
+            setTimeout(() => {
+                // This would need to be implemented in the widget API
+                alert('This would programmatically send a message to the chat');
+            }, 1000);
+        }
+
+        // Log widget events for demo purposes
+        console.log('ChatKit Widget Demo Page Loaded');
+        console.log('Widget API available:', typeof LightwaveChat !== 'undefined');
+    </script>
+</body>
+</html>
