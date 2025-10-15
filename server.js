@@ -329,6 +329,70 @@ app.get('/', (req, res) => {
     });
 });
 
+// Waitlist API endpoint
+app.post('/api/waitlist', async (req, res) => {
+    try {
+        const { name, email, company, useCase, timestamp } = req.body;
+        
+        // Validation
+        if (!name || !email) {
+            return res.status(400).json({ 
+                error: 'Name and email are required',
+                success: false 
+            });
+        }
+        
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ 
+                error: 'Please enter a valid email address',
+                success: false 
+            });
+        }
+        
+        // Create waitlist entry (you can expand this to save to database)
+        const waitlistEntry = {
+            name: name.trim(),
+            email: email.toLowerCase().trim(),
+            company: company ? company.trim() : '',
+            useCase: useCase || 'not-specified',
+            timestamp: timestamp || new Date().toISOString(),
+            ip: req.ip || req.connection.remoteAddress,
+            userAgent: req.get('User-Agent')
+        };
+        
+        // For now, just log it (you can later save to MongoDB)
+        console.log('📝 New Waitlist Entry:', {
+            name: waitlistEntry.name,
+            email: waitlistEntry.email,
+            company: waitlistEntry.company,
+            useCase: waitlistEntry.useCase,
+            timestamp: waitlistEntry.timestamp
+        });
+        
+        // TODO: Save to database
+        // const Waitlist = require('./src/server/models/Waitlist');
+        // await Waitlist.create(waitlistEntry);
+        
+        res.status(200).json({
+            success: true,
+            message: 'Successfully added to waitlist!',
+            data: {
+                name: waitlistEntry.name,
+                email: waitlistEntry.email
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Waitlist API Error:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            success: false
+        });
+    }
+});
+
 // Register
 app.post('/api/register', async (req, res) => {
   try {
