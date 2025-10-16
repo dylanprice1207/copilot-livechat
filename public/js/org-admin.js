@@ -570,7 +570,9 @@ class OrganizationAdmin {
         // Create comprehensive analytics dashboard
         const analyticsContainer = document.getElementById('analytics');
         if (analyticsContainer) {
-            const analyticsData = data || {
+            // Handle both direct data and nested response data
+            const responseData = data?.data || data;
+            const analyticsData = responseData || {
                 chatsToday: 156,
                 responseTime: 145,
                 satisfaction: 4.7,
@@ -627,7 +629,7 @@ class OrganizationAdmin {
                     <div class="chart-container">
                         <h3>Top Performing Agents</h3>
                         <div class="agent-list">
-                            ${analyticsData.topAgents.map(agent => `
+                            ${(analyticsData.topAgents || []).map(agent => `
                                 <div class="agent-item">
                                     <div class="agent-info">
                                         <span class="agent-name">${agent.name}</span>
@@ -642,7 +644,7 @@ class OrganizationAdmin {
                     <div class="chart-container">
                         <h3>Department Performance</h3>
                         <div class="department-stats">
-                            ${analyticsData.departmentStats.map(dept => `
+                            ${(analyticsData.departmentStats || []).map(dept => `
                                 <div class="dept-stat">
                                     <div class="dept-name">${dept.name}</div>
                                     <div class="dept-metrics">
@@ -657,8 +659,8 @@ class OrganizationAdmin {
                     <div class="chart-container">
                         <h3>Hourly Chat Volume</h3>
                         <div class="simple-chart">
-                            ${analyticsData.hourlyStats.map((value, index) => `
-                                <div class="chart-bar" style="height: ${(value / Math.max(...analyticsData.hourlyStats)) * 100}%">
+                            ${(analyticsData.hourlyStats || []).map((value, index) => `
+                                <div class="chart-bar" style="height: ${(value / Math.max(...(analyticsData.hourlyStats || [1]))) * 100}%">
                                     <span class="bar-value">${value}</span>
                                     <span class="bar-label">${index + 8}:00</span>
                                 </div>
@@ -753,7 +755,15 @@ class OrganizationAdmin {
                 satisfaction: 4.7,
                 topAgents: [
                     { name: 'John Doe', chats: 34, rating: 4.9 },
-                    { name: 'Jane Smith', chats: 28, rating: 4.8 }
+                    { name: 'Jane Smith', chats: 28, rating: 4.8 },
+                    { name: 'Bob Johnson', chats: 22, rating: 4.6 }
+                ],
+                hourlyStats: [12, 18, 25, 31, 28, 35, 42, 38, 29, 24, 19, 15],
+                departmentStats: [
+                    { name: 'Sales', chats: 45, satisfaction: 4.8 },
+                    { name: 'Support', chats: 67, satisfaction: 4.6 },
+                    { name: 'Technical', chats: 32, satisfaction: 4.9 },
+                    { name: 'Billing', chats: 12, satisfaction: 4.4 }
                 ]
             }
         };
