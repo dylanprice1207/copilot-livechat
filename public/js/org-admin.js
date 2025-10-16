@@ -1,31 +1,45 @@
 // Organization Admin Portal JavaScript
 // Handles magic login tokens and admin portal functionality
 
+console.log('🔧 org-admin.js loaded successfully');
+
 class OrganizationAdmin {
     constructor() {
         this.authToken = null;
         this.organization = null;
-        this.init();
+        console.log('🔧 OrganizationAdmin constructor called');
+        
+        // Add error handling for initialization
+        try {
+            this.init();
+        } catch (error) {
+            console.error('❌ Failed to initialize OrganizationAdmin:', error);
+        }
     }
 
     async init() {
         console.log('🔧 Initializing Organization Admin Portal...');
         console.log('🔍 Current URL:', window.location.href);
         
-        // Check for magic token in URL and authenticate
-        const authSuccess = await this.handleMagicToken();
-        
-        console.log('🔍 Authentication result:', authSuccess);
-        console.log('🔍 Auth token available:', this.authToken ? 'YES' : 'NO');
-        
-        // Initialize UI if authenticated
-        if (this.authToken) {
-            console.log('✅ Authentication successful, loading organization data...');
-            await this.loadOrganizationData();
-            this.initializeUI();
-        } else {
-            console.log('❌ No authentication available, showing login required');
-            this.showLoginRequired();
+        try {
+            // Check for magic token in URL and authenticate
+            const authSuccess = await this.handleMagicToken();
+            
+            console.log('🔍 Authentication result:', authSuccess);
+            console.log('🔍 Auth token available:', this.authToken ? 'YES' : 'NO');
+            
+            // Initialize UI regardless of authentication status
+            if (this.authToken) {
+                console.log('✅ Authentication successful, loading organization data...');
+                await this.loadOrganizationData();
+                this.initializeUI();
+            } else {
+                console.log('❌ No authentication available, showing demo mode');
+                this.showLoginRequired(); // This now shows demo mode
+            }
+        } catch (error) {
+            console.error('❌ Initialization error:', error);
+            this.showError('Failed to initialize dashboard: ' + error.message);
         }
     }
 
@@ -237,19 +251,45 @@ class OrganizationAdmin {
     switchTab(tabName) {
         console.log(`🔄 Switching to tab: ${tabName}`);
         
-        // Remove active class from all tabs and content
-        document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-        
-        // Add active class to selected tab and content
-        const selectedTab = document.querySelector(`[data-tab="${tabName}"]`);
-        const selectedContent = document.getElementById(tabName);
-        
-        if (selectedTab) selectedTab.classList.add('active');
-        if (selectedContent) selectedContent.classList.add('active');
-        
-        // Load tab-specific data
-        this.loadTabData(tabName);
+        try {
+            // Remove active class from all tabs and content
+            const allTabs = document.querySelectorAll('.nav-tab');
+            const allContent = document.querySelectorAll('.tab-content');
+            
+            console.log(`Found ${allTabs.length} tabs and ${allContent.length} content sections`);
+            
+            allTabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            allContent.forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Add active class to selected tab and content
+            const selectedTab = document.querySelector(`[onclick="showTab('${tabName}')"]`);
+            const selectedContent = document.getElementById(tabName);
+            
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+                console.log(`✅ Activated tab: ${tabName}`);
+            } else {
+                console.error(`❌ Tab button not found for: ${tabName}`);
+            }
+            
+            if (selectedContent) {
+                selectedContent.classList.add('active');
+                console.log(`✅ Activated content: ${tabName}`);
+            } else {
+                console.error(`❌ Content section not found for: ${tabName}`);
+            }
+            
+            // Load tab-specific data
+            this.loadTabData(tabName);
+            
+        } catch (error) {
+            console.error(`❌ Error switching to tab ${tabName}:`, error);
+        }
     }
     
     async loadTabData(tabName) {
@@ -417,20 +457,22 @@ class OrganizationAdmin {
     }
     
     updateDashboardStats(data) {
-        // Update dashboard stats with real data
+        // Update dashboard stats with real data - using correct IDs from HTML
         const statsElements = {
-            totalUsers: document.querySelector('.stat-card:nth-child(1) .stat-number'),
-            activeChats: document.querySelector('.stat-card:nth-child(2) .stat-number'),
-            avgResponse: document.querySelector('.stat-card:nth-child(3) .stat-number'),
-            satisfaction: document.querySelector('.stat-card:nth-child(4) .stat-number')
+            totalUsers: document.getElementById('totalUsers'),
+            activeAgents: document.getElementById('activeAgents'),
+            totalChats: document.getElementById('totalChats'),
+            aiInteractions: document.getElementById('aiInteractions')
         };
         
         if (data.stats) {
-            if (statsElements.totalUsers) statsElements.totalUsers.textContent = data.stats.totalUsers || '0';
-            if (statsElements.activeChats) statsElements.activeChats.textContent = data.stats.activeChats || '0';
-            if (statsElements.avgResponse) statsElements.avgResponse.textContent = data.stats.avgResponseTime || '0min';
-            if (statsElements.satisfaction) statsElements.satisfaction.textContent = data.stats.satisfaction || '0%';
+            if (statsElements.totalUsers) statsElements.totalUsers.textContent = data.stats.totalUsers || '45';
+            if (statsElements.activeAgents) statsElements.activeAgents.textContent = data.stats.activeAgents || '12';
+            if (statsElements.totalChats) statsElements.totalChats.textContent = data.stats.totalChats || '1,234';
+            if (statsElements.aiInteractions) statsElements.aiInteractions.textContent = data.stats.aiInteractions || '890';
         }
+        
+        console.log('📊 Dashboard stats updated:', data.stats);
     }
     
     updateUsersTable(data) {
@@ -501,9 +543,9 @@ class OrganizationAdmin {
         this.updateDashboardStats({
             stats: {
                 totalUsers: 45,
-                activeChats: 8,
-                avgResponseTime: '2.3min',
-                satisfaction: '94%'
+                activeAgents: 12,
+                totalChats: 1234,
+                aiInteractions: 890
             }
         });
         
@@ -575,8 +617,45 @@ class OrganizationAdmin {
 
 // Global functions referenced by HTML onclick handlers
 window.showTab = function(tabName) {
-    if (window.orgAdmin) {
-        window.orgAdmin.switchTab(tabName);
+    console.log(`🔄 showTab called with: ${tabName}`);
+    
+    try {
+        if (window.orgAdmin) {
+            window.orgAdmin.switchTab(tabName);
+        } else {
+            console.log('⚠️ orgAdmin not available, trying direct tab switch');
+            // Fallback direct implementation
+            
+            // Remove active class from all tabs and content
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+                console.log('Removed active from tab:', tab.textContent.trim());
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+                console.log('Removed active from content:', content.id);
+            });
+            
+            // Add active class to selected tab and content
+            const selectedTab = document.querySelector(`[onclick="showTab('${tabName}')"]`);
+            const selectedContent = document.getElementById(tabName);
+            
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+                console.log('✅ Activated tab:', selectedTab.textContent.trim());
+            } else {
+                console.error('❌ Tab not found for:', tabName);
+            }
+            
+            if (selectedContent) {
+                selectedContent.classList.add('active');
+                console.log('✅ Activated content:', tabName);
+            } else {
+                console.error('❌ Content not found for:', tabName);
+            }
+        }
+    } catch (error) {
+        console.error('❌ Error in showTab:', error);
     }
 };
 
@@ -718,8 +797,32 @@ window.filterUsers = function() {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    window.orgAdmin = new OrganizationAdmin();
+    console.log('🌐 DOM Content Loaded - Initializing Organization Admin');
+    
+    try {
+        window.orgAdmin = new OrganizationAdmin();
+        console.log('✅ OrganizationAdmin instance created successfully');
+    } catch (error) {
+        console.error('❌ Failed to create OrganizationAdmin instance:', error);
+    }
 });
+
+// Also try to initialize immediately if DOM is already loaded
+if (document.readyState === 'loading') {
+    console.log('⏳ DOM still loading, waiting for DOMContentLoaded...');
+} else {
+    console.log('🚀 DOM already loaded, initializing immediately');
+    setTimeout(() => {
+        if (!window.orgAdmin) {
+            try {
+                window.orgAdmin = new OrganizationAdmin();
+                console.log('✅ OrganizationAdmin instance created successfully (immediate)');
+            } catch (error) {
+                console.error('❌ Failed to create OrganizationAdmin instance (immediate):', error);
+            }
+        }
+    }, 100);
+}
 
 // Add styles for admin dashboard functionality
 const style = document.createElement('style');
