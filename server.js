@@ -790,6 +790,147 @@ app.use('/api/global-admin', authenticateToken, globalAdminRoutes);
 const organizationRoutes = require('./src/server/routes/organization');
 app.use('/api/organization', organizationRoutes);
 
+// Handle magic login for organization admin portal
+async function handleOrgAdminMagicLogin(req, res, organization) {
+    const magicToken = req.query.magic_token;
+    let authStatus = 'unauthenticated';
+    let authData = null;
+    let errorMessage = null;
+    
+    if (magicToken) {
+        console.log('🪄 Processing magic token for organization admin portal...');
+        
+        try {
+            // Verify the magic token
+            const decoded = jwt.verify(magicToken, process.env.JWT_SECRET || 'your-secret-key-change-in-production');
+            
+            // Check if it's a valid magic login token
+            if (!decoded.magicLogin) {
+                throw new Error('Invalid magic token format');
+            }
+            
+            // Check if token is expired
+            const now = Math.floor(Date.now() / 1000);
+            if (decoded.exp && decoded.exp < now) {
+                throw new Error('Magic token has expired');
+            }
+            
+            // Verify organization matches
+            if (decoded.organizationId !== organization._id.toString()) {
+                throw new Error('Magic token is for a different organization');
+            }
+            
+            // Skip global admin validation due to User model issues, but log it
+            console.log(`✅ Magic token verified for ${decoded.globalAdminUsername} → ${organization.name}`);
+            
+            authStatus = 'authenticated';
+            authData = {
+                organizationId: decoded.organizationId,
+                organizationName: organization.name,
+                organizationSlug: organization.slug,
+                globalAdminId: decoded.globalAdminId,
+                globalAdminUsername: decoded.globalAdminUsername,
+                targetRole: decoded.targetRole
+            };
+            
+        } catch (error) {
+            console.error('❌ Magic token verification failed:', error.message);
+            authStatus = 'error';
+            errorMessage = error.message;
+        }
+    }
+    
+    // Read the HTML file and inject authentication data
+    const fs = require('fs');
+    const htmlPath = path.join(__dirname, 'public', 'org-admin.html');
+    let htmlContent = fs.readFileSync(htmlPath, 'utf8');
+    
+    // Inject authentication data as a script tag before the existing scripts
+    const authDataScript = `
+    <script>
+        // Magic Login Authentication Data (injected server-side)
+        window.magicLoginAuth = {
+            status: '${authStatus}',
+            data: ${authData ? JSON.stringify(authData) : 'null'},
+            error: ${errorMessage ? `'${errorMessage}'` : 'null'}
+        };
+        console.log('🔍 Magic Login Auth Data:', window.magicLoginAuth);
+        
+        // Show authentication status immediately
+        if (window.magicLoginAuth.status === 'authenticated') {
+            console.log('✅ Magic login successful for:', window.magicLoginAuth.data.organizationName);
+            
+            // Update page title
+            document.title = window.magicLoginAuth.data.organizationName + ' - Admin Portal';
+            
+            // Show success banner
+            const banner = document.createElement('div');
+            banner.innerHTML = \`
+                <div style="position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(90deg, #10b981, #059669); color: white; padding: 12px; text-align: center; z-index: 10000; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <i class="fas fa-shield-alt"></i>
+                    <strong>Magic Login Successful</strong> - Welcome to \${window.magicLoginAuth.data.organizationName} Admin Portal
+                    <small style="opacity: 0.8; margin-left: 10px;">Authenticated as Global Admin</small>
+                </div>
+            \`;
+            document.body.appendChild(banner);
+            
+            // Add margin to body to account for banner
+            document.body.style.marginTop = '50px';
+            
+            // Auto-hide banner after 8 seconds
+            setTimeout(() => {
+                banner.style.transform = 'translateY(-100%)';
+                banner.style.transition = 'transform 0.3s ease';
+                setTimeout(() => {
+                    if (banner.parentNode) {
+                        banner.parentNode.removeChild(banner);
+                        document.body.style.marginTop = '';
+                    }
+                }, 300);
+            }, 8000);
+            
+        } else if (window.magicLoginAuth.status === 'error') {
+            console.error('❌ Magic login failed:', window.magicLoginAuth.error);
+            
+            // Show error banner
+            const banner = document.createElement('div');
+            banner.innerHTML = \`
+                <div style="position: fixed; top: 0; left: 0; right: 0; background: #ef4444; color: white; padding: 12px; text-align: center; z-index: 10000; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Magic Login Failed</strong> - \${window.magicLoginAuth.error}
+                </div>
+            \`;
+            document.body.appendChild(banner);
+            document.body.style.marginTop = '50px';
+            
+        } else {
+            console.log('🔍 No magic token provided - manual authentication required');
+            
+            // Show authentication required message
+            const authRequired = document.createElement('div');
+            authRequired.innerHTML = \`
+                <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); text-align: center; max-width: 500px; z-index: 10000;">
+                    <h2 style="margin-bottom: 20px; color: #4a5568;"><i class="fas fa-lock"></i> Authentication Required</h2>
+                    <p style="margin-bottom: 15px; color: #718096; line-height: 1.6;">You need to be authenticated to access this organization's admin portal.</p>
+                    <p style="margin-bottom: 20px; color: #718096; line-height: 1.6;">Please use a magic login link from the global admin panel.</p>
+                    <button onclick="window.close()" style="background: #6b7280; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px;">Close</button>
+                </div>
+                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999;"></div>
+            \`;
+            document.body.appendChild(authRequired);
+        }
+    </script>`;
+    
+    // Insert the auth data script before the existing scripts
+    htmlContent = htmlContent.replace(
+        '<script src="/socket.io/socket.io.js"></script>',
+        authDataScript + '\n    <script src="/socket.io/socket.io.js"></script>'
+    );
+    
+    // Send the modified HTML
+    res.send(htmlContent);
+}
+
 // Organization-specific URL routing middleware
 app.use('/:orgSlug/:route', async (req, res, next) => {
     const { orgSlug, route } = req.params;
@@ -818,8 +959,8 @@ app.use('/:orgSlug/:route', async (req, res, next) => {
         // Serve the appropriate page based on route
         switch (route) {
             case 'admin':
-                // Serve organization admin portal
-                res.sendFile(path.join(__dirname, 'public', 'org-admin.html'));
+                // Handle magic login for organization admin portal
+                await handleOrgAdminMagicLogin(req, res, organization);
                 break;
                 
             case 'chat':

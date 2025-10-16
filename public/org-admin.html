@@ -900,6 +900,87 @@
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // Inline debugging script to test magic login
+        console.log('🔍 Inline script loading...');
+        console.log('🔍 Current URL:', window.location.href);
+        console.log('🔍 URL search params:', window.location.search);
+        
+        // Check if fetch is available
+        console.log('🔍 Fetch available:', typeof fetch !== 'undefined');
+        
+        // Check for magic token
+        const urlParams = new URLSearchParams(window.location.search);
+        const magicToken = urlParams.get('magic_token');
+        console.log('🔍 Magic token found:', magicToken ? 'YES' : 'NO');
+        
+        if (magicToken) {
+            console.log('🪄 Magic token detected:', magicToken.substring(0, 50) + '...');
+            
+            // Create visual indicator
+            const indicator = document.createElement('div');
+            indicator.innerHTML = `
+                <div style="position: fixed; top: 0; left: 0; right: 0; background: #10b981; color: white; padding: 10px; text-align: center; z-index: 10000;">
+                    🪄 Magic Token Detected - Authenticating...
+                </div>
+            `;
+            document.body.appendChild(indicator);
+            
+            // Test fetch availability and make verification request
+            if (typeof fetch !== 'undefined') {
+                console.log('🔍 Making fetch request to verify magic token...');
+                fetch('/api/verify-magic-token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ magicToken: magicToken })
+                })
+                .then(response => {
+                    console.log('🔍 Fetch response status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('🔍 Verification response:', data);
+                    if (data.success) {
+                        indicator.innerHTML = `
+                            <div style="position: fixed; top: 0; left: 0; right: 0; background: #10b981; color: white; padding: 10px; text-align: center; z-index: 10000;">
+                                ✅ Magic Login Successful for ${data.organization.name}
+                            </div>
+                        `;
+                        
+                        // Update page title
+                        document.title = `${data.organization.name} - Admin Portal`;
+                        
+                        // Remove magic token from URL
+                        const url = new URL(window.location);
+                        url.searchParams.delete('magic_token');
+                        window.history.replaceState({}, document.title, url.pathname);
+                        
+                    } else {
+                        indicator.innerHTML = `
+                            <div style="position: fixed; top: 0; left: 0; right: 0; background: #ef4444; color: white; padding: 10px; text-align: center; z-index: 10000;">
+                                ❌ Magic Login Failed: ${data.message}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('🔍 Fetch error:', error);
+                    indicator.innerHTML = `
+                        <div style="position: fixed; top: 0; left: 0; right: 0; background: #ef4444; color: white; padding: 10px; text-align: center; z-index: 10000;">
+                            ❌ Magic Login Error: ${error.message}
+                        </div>
+                    `;
+                });
+            } else {
+                console.log('❌ Fetch not available, magic login will not work');
+                indicator.innerHTML = `
+                    <div style="position: fixed; top: 0; left: 0; right: 0; background: #ef4444; color: white; padding: 10px; text-align: center; z-index: 10000;">
+                        ❌ Fetch API not available - Magic login requires modern browser
+                    </div>
+                `;
+            }
+        }
+    </script>
     <script src="js/org-admin.js"></script>
 </body>
 </html>
