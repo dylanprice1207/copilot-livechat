@@ -441,7 +441,127 @@ class OrganizationAdmin {
         if (fields.maxTokens) fields.maxTokens.value = defaults.maxTokens;
         if (fields.model) fields.model.value = defaults.model;
         
+        // Add ChatFlow configuration section
+        this.updateChatFlowConfig(data);
+        
         console.log('✅ AI config form updated with values');
+    }
+    
+    updateChatFlowConfig(data) {
+        console.log('🌊 Updating ChatFlow configuration...');
+        
+        // Find or create ChatFlow config container
+        const aiConfigTab = document.getElementById('ai-config');
+        let chatFlowContainer = aiConfigTab?.querySelector('.chatflow-config');
+        
+        if (!chatFlowContainer) {
+            chatFlowContainer = document.createElement('div');
+            chatFlowContainer.className = 'chatflow-config';
+            chatFlowContainer.innerHTML = `
+                <div class="section">
+                    <h3><i class="fas fa-stream"></i> ChatFlow Configuration</h3>
+                    <div class="config-grid">
+                        <div class="form-group">
+                            <label for="chatflowEnabled">Enable ChatFlow</label>
+                            <select id="chatflowEnabled">
+                                <option value="true">Enabled</option>
+                                <option value="false">Disabled</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="chatflowMode">ChatFlow Mode</label>
+                            <select id="chatflowMode">
+                                <option value="auto">Automatic</option>
+                                <option value="manual">Manual</option>
+                                <option value="hybrid">Hybrid</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="welcomeMessage">Welcome Message</label>
+                            <textarea id="welcomeMessage" rows="3" placeholder="Hello! How can I help you today?"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="fallbackMessage">Fallback Message</label>
+                            <textarea id="fallbackMessage" rows="2" placeholder="I'm not sure I understand. Could you please rephrase?"></textarea>
+                        </div>
+                    </div>
+                    
+                    <h4><i class="fas fa-robot"></i> Flow Builder</h4>
+                    <div class="flow-builder">
+                        <div class="flow-steps">
+                            <div class="flow-step active">
+                                <div class="step-header">
+                                    <i class="fas fa-play"></i>
+                                    <span>Welcome Step</span>
+                                    <button class="btn-small" onclick="window.orgAdmin.editFlowStep('welcome')">Edit</button>
+                                </div>
+                                <div class="step-content">
+                                    <p>Greet the customer and ask how to help</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flow-step">
+                                <div class="step-header">
+                                    <i class="fas fa-question"></i>
+                                    <span>Intent Detection</span>
+                                    <button class="btn-small" onclick="window.orgAdmin.editFlowStep('intent')">Edit</button>
+                                </div>
+                                <div class="step-content">
+                                    <p>Analyze customer intent and route accordingly</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flow-step">
+                                <div class="step-header">
+                                    <i class="fas fa-users"></i>
+                                    <span>Agent Handoff</span>
+                                    <button class="btn-small" onclick="window.orgAdmin.editFlowStep('handoff')">Edit</button>
+                                </div>
+                                <div class="step-content">
+                                    <p>Transfer to appropriate department agent</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flow-actions">
+                            <button class="btn btn-success" onclick="window.orgAdmin.addFlowStep()">
+                                <i class="fas fa-plus"></i> Add Step
+                            </button>
+                            <button class="btn btn-primary" onclick="window.orgAdmin.testChatFlow()">
+                                <i class="fas fa-play"></i> Test Flow
+                            </button>
+                            <button class="btn btn-secondary" onclick="window.orgAdmin.exportChatFlow()">
+                                <i class="fas fa-download"></i> Export Flow
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-success" onclick="saveChatFlowConfig()">
+                        <i class="fas fa-save"></i> Save ChatFlow Configuration
+                    </button>
+                </div>
+            `;
+            
+            // Insert after the AI config section
+            const aiConfigSection = aiConfigTab?.querySelector('.section');
+            if (aiConfigSection) {
+                aiConfigSection.parentNode.insertBefore(chatFlowContainer, aiConfigSection.nextSibling);
+            }
+        }
+        
+        // Set ChatFlow values
+        const chatflowData = data?.chatflow || {};
+        const chatflowEnabled = document.getElementById('chatflowEnabled');
+        const chatflowMode = document.getElementById('chatflowMode');
+        const welcomeMessage = document.getElementById('welcomeMessage');
+        const fallbackMessage = document.getElementById('fallbackMessage');
+        
+        if (chatflowEnabled) chatflowEnabled.value = chatflowData.enabled !== false ? 'true' : 'false';
+        if (chatflowMode) chatflowMode.value = chatflowData.mode || 'auto';
+        if (welcomeMessage) welcomeMessage.value = chatflowData.welcomeMessage || 'Hello! How can I help you today?';
+        if (fallbackMessage) fallbackMessage.value = chatflowData.fallbackMessage || "I'm not sure I understand. Could you please rephrase?";
+        
+        console.log('✅ ChatFlow configuration updated');
     }
     
     updateAnalyticsCharts(data) {
@@ -618,7 +738,14 @@ class OrganizationAdmin {
             '/api/ai/config': {
                 openaiKey: 'sk-demo...key',
                 temperature: 0.7,
-                maxTokens: 500
+                maxTokens: 500,
+                model: 'gpt-3.5-turbo',
+                chatflow: {
+                    enabled: true,
+                    mode: 'auto',
+                    welcomeMessage: 'Hello! How can I help you today?',
+                    fallbackMessage: "I'm not sure I understand. Could you please rephrase?"
+                }
             },
             '/api/admin/analytics': {
                 chatsToday: 156,
@@ -1074,6 +1201,104 @@ window.orgAdmin.createDepartment = function() {
     }
 };
 
+// ChatFlow management functions
+window.orgAdmin.editFlowStep = function(stepId) {
+    console.log(`✏️ Editing flow step: ${stepId}`);
+    
+    const stepNames = {
+        welcome: 'Welcome Step',
+        intent: 'Intent Detection',
+        handoff: 'Agent Handoff'
+    };
+    
+    const stepName = stepNames[stepId] || stepId;
+    const newContent = prompt(`Edit ${stepName} configuration:`, `Configuration for ${stepName}`);
+    
+    if (newContent) {
+        window.orgAdmin.showSuccess(`${stepName} updated successfully! (Demo mode)`);
+    }
+};
+
+window.orgAdmin.addFlowStep = function() {
+    console.log('➕ Adding new ChatFlow step');
+    
+    const stepTypes = ['Condition', 'Action', 'Message', 'API Call', 'Transfer'];
+    const stepType = prompt(`Select step type:\n${stepTypes.map((t, i) => `${i + 1}. ${t}`).join('\n')}`);
+    
+    if (stepType) {
+        window.orgAdmin.showSuccess(`New ChatFlow step added! (Demo mode)`);
+        
+        // Refresh the AI config to show updated flow
+        setTimeout(() => {
+            if (window.orgAdmin.currentTab === 'ai-config') {
+                window.orgAdmin.loadAIConfigData();
+            }
+        }, 500);
+    }
+};
+
+window.orgAdmin.testChatFlow = function() {
+    console.log('🧪 Testing ChatFlow');
+    
+    // Simulate flow test
+    window.orgAdmin.showSuccess('ChatFlow test initiated! Check console for results (Demo mode)');
+    
+    // Simulate test results
+    setTimeout(() => {
+        console.log('🌊 ChatFlow Test Results:');
+        console.log('✅ Welcome step: Working');
+        console.log('✅ Intent detection: Working');
+        console.log('✅ Agent handoff: Working');
+        console.log('📊 Average response time: 1.2s');
+        window.orgAdmin.showSuccess('ChatFlow test completed successfully!');
+    }, 2000);
+};
+
+window.orgAdmin.exportChatFlow = function() {
+    console.log('📤 Exporting ChatFlow configuration');
+    
+    const flowConfig = {
+        version: '1.0',
+        steps: [
+            { id: 'welcome', type: 'message', content: 'Hello! How can I help you today?' },
+            { id: 'intent', type: 'ai_analysis', model: 'gpt-3.5-turbo' },
+            { id: 'handoff', type: 'transfer', conditions: ['human_requested', 'complex_query'] }
+        ],
+        settings: {
+            enabled: true,
+            mode: 'auto',
+            fallback: "I'm not sure I understand. Could you please rephrase?"
+        }
+    };
+    
+    // Create download link
+    const dataStr = JSON.stringify(flowConfig, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'chatflow-config.json';
+    link.click();
+    
+    URL.revokeObjectURL(url);
+    window.orgAdmin.showSuccess('ChatFlow configuration exported! (Demo mode)');
+};
+
+window.saveChatFlowConfig = function() {
+    if (!window.orgAdmin) return;
+    
+    const chatflowConfig = {
+        enabled: document.getElementById('chatflowEnabled')?.value === 'true',
+        mode: document.getElementById('chatflowMode')?.value,
+        welcomeMessage: document.getElementById('welcomeMessage')?.value,
+        fallbackMessage: document.getElementById('fallbackMessage')?.value
+    };
+    
+    console.log('🌊 Saving ChatFlow config:', chatflowConfig);
+    window.orgAdmin.showSuccess('ChatFlow Configuration saved successfully! (Demo mode)');
+};
+
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🌐 DOM Content Loaded - Initializing Organization Admin');
@@ -1436,6 +1661,113 @@ style.textContent = `
         font-size: 10px;
         color: #6b7280;
         transform: rotate(-45deg);
+    }
+    
+    /* ChatFlow Styles */
+    .chatflow-config {
+        margin-top: 30px;
+    }
+    
+    .flow-builder {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .flow-steps {
+        margin-bottom: 20px;
+    }
+    
+    .flow-step {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        overflow: hidden;
+        transition: all 0.2s ease;
+    }
+    
+    .flow-step:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .flow-step.active {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    }
+    
+    .step-header {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e5e7eb;
+        gap: 10px;
+    }
+    
+    .step-header i {
+        color: #3b82f6;
+        width: 16px;
+    }
+    
+    .step-header span {
+        flex: 1;
+        font-weight: 500;
+        color: #374151;
+    }
+    
+    .btn-small {
+        padding: 4px 8px;
+        font-size: 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        background: white;
+        color: #374151;
+        cursor: pointer;
+    }
+    
+    .btn-small:hover {
+        background: #f9fafb;
+        border-color: #9ca3af;
+    }
+    
+    .step-content {
+        padding: 12px 16px;
+        color: #6b7280;
+        font-size: 14px;
+    }
+    
+    .flow-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding-top: 15px;
+        border-top: 1px solid #e5e7eb;
+    }
+    
+    .config-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .form-group textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: inherit;
+        resize: vertical;
+    }
+    
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 `;
 document.head.appendChild(style);
