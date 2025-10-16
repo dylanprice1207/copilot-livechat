@@ -1111,19 +1111,35 @@ window.deleteUser = function(userId) {
     }
 };
 
-window.editDepartment = function(deptId) {
-    if (!window.orgAdmin) return;
-    
+window.orgAdmin.editDepartment = function(deptId) {
     console.log(`✏️ Editing department: ${deptId}`);
-    window.orgAdmin.showSuccess(`Editing department ${deptId} (Demo mode)`);
+    
+    // Create a modal-like dialog for editing
+    const currentName = prompt('Enter new department name:');
+    if (currentName) {
+        console.log(`📝 Updating department ${deptId} to: ${currentName}`);
+        window.orgAdmin.showSuccess(`Department updated to "${currentName}" (Demo mode)`);
+        
+        // Refresh the departments view
+        setTimeout(() => {
+            if (window.orgAdmin.currentTab === 'departments') {
+                window.orgAdmin.loadDepartmentsData();
+            }
+        }, 1000);
+    }
 };
 
-window.deleteDepartment = function(deptId) {
-    if (!window.orgAdmin) return;
-    
-    if (confirm('Are you sure you want to delete this department?')) {
+window.orgAdmin.deleteDepartment = function(deptId) {
+    if (confirm('⚠️ Are you sure you want to delete this department?\n\nThis action cannot be undone and will unassign all agents.')) {
         console.log(`🗑️ Deleting department: ${deptId}`);
         window.orgAdmin.showSuccess(`Department ${deptId} deleted successfully (Demo mode)`);
+        
+        // Refresh the departments view
+        setTimeout(() => {
+            if (window.orgAdmin.currentTab === 'departments') {
+                window.orgAdmin.loadDepartmentsData();
+            }
+        }, 1000);
     }
 };
 
@@ -1186,17 +1202,58 @@ window.testBotPersonalities = function() {
 window.orgAdmin = window.orgAdmin || {};
 window.orgAdmin.viewDepartmentAgents = function(deptId) {
     console.log(`👥 Viewing agents for department: ${deptId}`);
-    window.orgAdmin.showSuccess(`Viewing agents for department ${deptId} (Demo mode)`);
+    
+    // Mock data for department agents
+    const mockAgents = [
+        { name: 'Sarah Johnson', status: 'online', activeChats: 3, rating: 4.9 },
+        { name: 'Mike Chen', status: 'busy', activeChats: 5, rating: 4.8 },
+        { name: 'Lisa Garcia', status: 'offline', activeChats: 0, rating: 4.7 }
+    ];
+    
+    // Create a detailed view
+    const agentsList = mockAgents.map(agent => 
+        `• ${agent.name} (${agent.status}) - ${agent.activeChats} chats - ⭐${agent.rating}`
+    ).join('\n');
+    
+    alert(`👥 Department Agents:\n\n${agentsList}\n\n(Demo Mode - Real implementation would show detailed agent dashboard)`);
+    
+    window.orgAdmin.showSuccess(`Viewed ${mockAgents.length} agents for department ${deptId}`);
 };
 
 window.orgAdmin.assignAgents = function(deptId) {
     console.log(`➕ Assigning agents to department: ${deptId}`);
     
-    // Create a simple assignment dialog
-    const agents = ['John Doe', 'Jane Smith', 'Bob Wilson', 'Alice Johnson'];
-    const selectedAgents = agents.filter(() => Math.random() > 0.5);
+    // Mock available agents
+    const availableAgents = [
+        'John Doe (Available)', 
+        'Jane Smith (Available)', 
+        'Bob Wilson (Available)', 
+        'Alice Johnson (Available)',
+        'Tom Rodriguez (Available)',
+        'Emma Davis (Available)'
+    ];
     
-    window.orgAdmin.showSuccess(`Assigned ${selectedAgents.length} agents to department (Demo mode)`);
+    // Simple multi-select simulation
+    const selectedAgent = prompt(
+        `Available Agents:\n${availableAgents.map((agent, i) => `${i+1}. ${agent}`).join('\n')}\n\nEnter agent numbers to assign (e.g., 1,3,5):`
+    );
+    
+    if (selectedAgent) {
+        const indices = selectedAgent.split(',').map(i => parseInt(i.trim())).filter(i => i >= 1 && i <= availableAgents.length);
+        const assigned = indices.map(i => availableAgents[i-1]);
+        
+        if (assigned.length > 0) {
+            console.log(`✅ Assigned agents:`, assigned);
+            window.orgAdmin.showSuccess(`Successfully assigned ${assigned.length} agents to department (Demo mode)`);
+            
+            // Refresh the departments view
+            setTimeout(() => {
+                if (window.orgAdmin.currentTab === 'departments') {
+                    window.orgAdmin.loadDepartmentsData();
+                }
+            }, 1000);
+        }
+    }
 };
 
 window.orgAdmin.createDepartment = function() {
