@@ -121,7 +121,7 @@ router.delete('/organizations/:id', requireGlobalAdmin, async (req, res) => {
   try {
     const result = await OrganizationService.deleteOrganization(
       req.params.id, 
-      req.user.userId
+      req.user._id
     );
     
     res.json(result);
