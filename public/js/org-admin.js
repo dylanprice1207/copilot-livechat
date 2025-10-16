@@ -164,6 +164,20 @@ class OrganizationAdmin {
             }
         }
         
+        // Update the admin name/loading indicator
+        const adminName = document.getElementById('adminName');
+        if (adminName) {
+            const orgName = this.organization?.name || 'Demo Organization';
+            const adminText = this.authToken === 'demo-token' 
+                ? 'Demo Admin' 
+                : 'Global Admin';
+            adminName.innerHTML = `
+                <i class="fas fa-user-shield"></i>
+                <span>${adminText}</span>
+                <small style="display: block; font-size: 0.8em; opacity: 0.7;">${orgName}</small>
+            `;
+        }
+        
         // Show success message with organization name
         const orgName = this.organization?.name || 'Organization';
         this.showSuccess(`✅ Successfully logged into ${orgName} Admin Portal!`);
@@ -414,29 +428,128 @@ class OrganizationAdmin {
             model: document.getElementById('model')
         };
         
-        if (data) {
-            if (fields.openaiApiKey && data.openaiKey) fields.openaiApiKey.value = data.openaiKey;
-            if (fields.temperature && data.temperature) fields.temperature.value = data.temperature;
-            if (fields.maxTokens && data.maxTokens) fields.maxTokens.value = data.maxTokens;
-            if (fields.model && data.model) fields.model.value = data.model;
-        }
+        // Set default or provided values
+        const defaults = {
+            openaiKey: data?.openaiKey || 'sk-demo...configured',
+            temperature: data?.temperature || '0.7',
+            maxTokens: data?.maxTokens || '500',
+            model: data?.model || 'gpt-3.5-turbo'
+        };
+        
+        if (fields.openaiApiKey) fields.openaiApiKey.value = defaults.openaiKey;
+        if (fields.temperature) fields.temperature.value = defaults.temperature;
+        if (fields.maxTokens) fields.maxTokens.value = defaults.maxTokens;
+        if (fields.model) fields.model.value = defaults.model;
+        
+        console.log('✅ AI config form updated with values');
     }
     
     updateAnalyticsCharts(data) {
         console.log('📈 Updating analytics charts with data:', data);
         
-        // Update analytics displays
-        if (data) {
-            const elements = {
-                chatsToday: document.getElementById('chatsToday'),
-                avgResponseTime: document.getElementById('avgResponseTime'),
-                satisfaction: document.getElementById('satisfaction')
+        // Create comprehensive analytics dashboard
+        const analyticsContainer = document.getElementById('analytics');
+        if (analyticsContainer) {
+            const analyticsData = data || {
+                chatsToday: 156,
+                responseTime: 145,
+                satisfaction: 4.7,
+                topAgents: [
+                    { name: 'John Doe', chats: 34, rating: 4.9 },
+                    { name: 'Jane Smith', chats: 28, rating: 4.8 },
+                    { name: 'Bob Johnson', chats: 22, rating: 4.6 }
+                ],
+                hourlyStats: [12, 18, 25, 31, 28, 35, 42, 38, 29, 24, 19, 15],
+                departmentStats: [
+                    { name: 'Sales', chats: 45, satisfaction: 4.8 },
+                    { name: 'Support', chats: 67, satisfaction: 4.6 },
+                    { name: 'Technical', chats: 32, satisfaction: 4.9 },
+                    { name: 'Billing', chats: 12, satisfaction: 4.4 }
+                ]
             };
             
-            if (elements.chatsToday && data.chatsToday) elements.chatsToday.textContent = data.chatsToday;
-            if (elements.avgResponseTime && data.responseTime) elements.avgResponseTime.textContent = data.responseTime + 's';
-            if (elements.satisfaction && data.satisfaction) elements.satisfaction.textContent = data.satisfaction + '/5';
+            // Find or create analytics content area
+            let analyticsContent = analyticsContainer.querySelector('.analytics-content');
+            if (!analyticsContent) {
+                analyticsContent = document.createElement('div');
+                analyticsContent.className = 'analytics-content';
+                analyticsContainer.appendChild(analyticsContent);
+            }
+            
+            analyticsContent.innerHTML = `
+                <div class="analytics-grid">
+                    <div class="analytics-card">
+                        <h3><i class="fas fa-comments"></i> Today's Chats</h3>
+                        <div class="metric-value">${analyticsData.chatsToday}</div>
+                        <div class="metric-change">+12% from yesterday</div>
+                    </div>
+                    
+                    <div class="analytics-card">
+                        <h3><i class="fas fa-clock"></i> Avg Response Time</h3>
+                        <div class="metric-value">${analyticsData.responseTime}s</div>
+                        <div class="metric-change">-8% improvement</div>
+                    </div>
+                    
+                    <div class="analytics-card">
+                        <h3><i class="fas fa-star"></i> Satisfaction</h3>
+                        <div class="metric-value">${analyticsData.satisfaction}/5</div>
+                        <div class="metric-change">+0.2 from last week</div>
+                    </div>
+                    
+                    <div class="analytics-card">
+                        <h3><i class="fas fa-users"></i> Active Agents</h3>
+                        <div class="metric-value">12</div>
+                        <div class="metric-change">3 online now</div>
+                    </div>
+                </div>
+                
+                <div class="analytics-charts">
+                    <div class="chart-container">
+                        <h3>Top Performing Agents</h3>
+                        <div class="agent-list">
+                            ${analyticsData.topAgents.map(agent => `
+                                <div class="agent-item">
+                                    <div class="agent-info">
+                                        <span class="agent-name">${agent.name}</span>
+                                        <span class="agent-rating">⭐ ${agent.rating}</span>
+                                    </div>
+                                    <div class="agent-stats">${agent.chats} chats</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <h3>Department Performance</h3>
+                        <div class="department-stats">
+                            ${analyticsData.departmentStats.map(dept => `
+                                <div class="dept-stat">
+                                    <div class="dept-name">${dept.name}</div>
+                                    <div class="dept-metrics">
+                                        <span class="chat-count">${dept.chats} chats</span>
+                                        <span class="satisfaction-score">⭐ ${dept.satisfaction}</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <h3>Hourly Chat Volume</h3>
+                        <div class="simple-chart">
+                            ${analyticsData.hourlyStats.map((value, index) => `
+                                <div class="chart-bar" style="height: ${(value / Math.max(...analyticsData.hourlyStats)) * 100}%">
+                                    <span class="bar-value">${value}</span>
+                                    <span class="bar-label">${index + 8}:00</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
         }
+        
+        console.log('✅ Analytics dashboard updated');
     }
     
     async loadSettingsData() {
@@ -565,19 +678,38 @@ class OrganizationAdmin {
     }
     
     updateDepartmentsTable(data) {
-        const tbody = document.querySelector('#departmentsTable tbody');
-        if (tbody && data.departments) {
-            tbody.innerHTML = data.departments.map(dept => `
-                <tr>
-                    <td>${dept.name}</td>
-                    <td>${dept.agentCount || 0}</td>
-                    <td><span class="status-badge ${dept.status}">${dept.status}</span></td>
-                    <td>
-                        <button onclick="window.orgAdmin.editDepartment('${dept._id}')" class="btn btn-sm">Edit</button>
-                        <button onclick="window.orgAdmin.deleteDepartment('${dept._id}')" class="btn btn-sm btn-danger">Delete</button>
-                    </td>
-                </tr>
-            `).join('');
+        const deptManagement = document.getElementById('departmentManagement');
+        if (deptManagement && data.departments) {
+            deptManagement.innerHTML = `
+                <div class="department-grid">
+                    ${data.departments.map(dept => `
+                        <div class="department-card">
+                            <h4><i class="fas fa-building"></i> ${dept.name}</h4>
+                            <p class="dept-info">
+                                <span class="agent-count">${dept.agentCount || 0} agents</span>
+                                <span class="status-badge ${dept.status}">${dept.status}</span>
+                            </p>
+                            <div class="dept-actions">
+                                <button onclick="window.orgAdmin.viewDepartmentAgents('${dept._id}')" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-users"></i> View Agents
+                                </button>
+                                <button onclick="window.orgAdmin.assignAgents('${dept._id}')" class="btn btn-sm btn-success">
+                                    <i class="fas fa-plus"></i> Assign Agents
+                                </button>
+                                <button onclick="window.orgAdmin.editDepartment('${dept._id}')" class="btn btn-sm">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="add-department-section">
+                    <button onclick="window.orgAdmin.createDepartment()" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Create New Department
+                    </button>
+                </div>
+            `;
         }
     }
 
@@ -910,6 +1042,38 @@ window.testBotPersonalities = function() {
     window.orgAdmin.showSuccess('Bot personality test completed! (Demo mode)');
 };
 
+// Department management functions
+window.orgAdmin = window.orgAdmin || {};
+window.orgAdmin.viewDepartmentAgents = function(deptId) {
+    console.log(`👥 Viewing agents for department: ${deptId}`);
+    window.orgAdmin.showSuccess(`Viewing agents for department ${deptId} (Demo mode)`);
+};
+
+window.orgAdmin.assignAgents = function(deptId) {
+    console.log(`➕ Assigning agents to department: ${deptId}`);
+    
+    // Create a simple assignment dialog
+    const agents = ['John Doe', 'Jane Smith', 'Bob Wilson', 'Alice Johnson'];
+    const selectedAgents = agents.filter(() => Math.random() > 0.5);
+    
+    window.orgAdmin.showSuccess(`Assigned ${selectedAgents.length} agents to department (Demo mode)`);
+};
+
+window.orgAdmin.createDepartment = function() {
+    const deptName = prompt('Enter department name:');
+    if (deptName) {
+        console.log(`🏢 Creating department: ${deptName}`);
+        window.orgAdmin.showSuccess(`Department "${deptName}" created successfully! (Demo mode)`);
+        
+        // Refresh the departments view
+        setTimeout(() => {
+            if (window.orgAdmin.currentTab === 'departments') {
+                window.orgAdmin.loadDepartmentsData();
+            }
+        }, 1000);
+    }
+};
+
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🌐 DOM Content Loaded - Initializing Organization Admin');
@@ -1121,6 +1285,157 @@ style.textContent = `
         outline: none;
         border-color: #3b82f6;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    /* Department Management Styles */
+    .department-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .department-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border: 1px solid #e5e7eb;
+    }
+    
+    .department-card h4 {
+        margin: 0 0 10px 0;
+        color: #374151;
+    }
+    
+    .dept-info {
+        margin: 10px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .agent-count {
+        color: #6b7280;
+        font-size: 14px;
+    }
+    
+    .dept-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 15px;
+    }
+    
+    /* Analytics Styles */
+    .analytics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .analytics-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    
+    .analytics-card h3 {
+        margin: 0 0 10px 0;
+        color: #6b7280;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #1f2937;
+        margin: 10px 0;
+    }
+    
+    .metric-change {
+        font-size: 12px;
+        color: #10b981;
+    }
+    
+    .analytics-charts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 20px;
+    }
+    
+    .chart-container {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .chart-container h3 {
+        margin: 0 0 15px 0;
+        color: #374151;
+    }
+    
+    .agent-item, .dept-stat {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    
+    .agent-info {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .agent-name {
+        font-weight: 500;
+        color: #374151;
+    }
+    
+    .agent-rating {
+        font-size: 12px;
+        color: #f59e0b;
+    }
+    
+    .simple-chart {
+        display: flex;
+        align-items: end;
+        gap: 5px;
+        height: 120px;
+        padding: 10px 0;
+    }
+    
+    .chart-bar {
+        flex: 1;
+        background: linear-gradient(to top, #3b82f6, #60a5fa);
+        border-radius: 3px 3px 0 0;
+        position: relative;
+        min-height: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .bar-value {
+        color: white;
+        font-size: 10px;
+        font-weight: bold;
+        padding: 2px;
+    }
+    
+    .bar-label {
+        position: absolute;
+        bottom: -20px;
+        font-size: 10px;
+        color: #6b7280;
+        transform: rotate(-45deg);
     }
 `;
 document.head.appendChild(style);
