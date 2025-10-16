@@ -795,6 +795,51 @@ window.filterUsers = function() {
     });
 };
 
+window.logout = function() {
+    if (confirm('Are you sure you want to logout?')) {
+        sessionStorage.removeItem('orgAdminToken');
+        sessionStorage.removeItem('orgAdminOrg');
+        window.location.href = '/';
+    }
+};
+
+window.saveAIConfig = function() {
+    if (!window.orgAdmin) return;
+    
+    const aiConfig = {
+        openaiApiKey: document.getElementById('openaiApiKey').value,
+        temperature: document.getElementById('temperature').value,
+        maxTokens: document.getElementById('maxTokens').value,
+        model: document.getElementById('model').value
+    };
+    
+    console.log('🤖 Saving AI config:', aiConfig);
+    window.orgAdmin.showSuccess('AI Configuration saved successfully! (Demo mode)');
+};
+
+window.saveBotConfiguration = function() {
+    if (!window.orgAdmin) return;
+    
+    console.log('🤖 Saving bot configuration');
+    window.orgAdmin.showSuccess('Bot Configuration saved successfully! (Demo mode)');
+};
+
+window.resetBotConfiguration = function() {
+    if (!window.orgAdmin) return;
+    
+    if (confirm('Are you sure you want to reset bot configuration to defaults?')) {
+        console.log('🔄 Resetting bot configuration');
+        window.orgAdmin.showSuccess('Bot Configuration reset to defaults! (Demo mode)');
+    }
+};
+
+window.testBotPersonalities = function() {
+    if (!window.orgAdmin) return;
+    
+    console.log('🧪 Testing bot personalities');
+    window.orgAdmin.showSuccess('Bot personality test completed! (Demo mode)');
+};
+
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🌐 DOM Content Loaded - Initializing Organization Admin');

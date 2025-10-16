@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Test - ConvoAI</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .test-button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .test-button:hover {
+            background: #2563eb;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .status.success { background: #d1fae5; color: #065f46; }
+        .status.error { background: #fee2e2; color: #991b1b; }
+        .status.info { background: #dbeafe; color: #1e40af; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Organization Admin Dashboard Test</h1>
+    
+    <div class="test-section">
+        <h2>JavaScript Loading Test</h2>
+        <div id="jsStatus" class="status info">Checking JavaScript...</div>
+        <button class="test-button" onclick="testJavaScript()">Test JS Functions</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Tab Navigation Test</h2>
+        <div id="tabStatus" class="status info">Ready to test tabs...</div>
+        <button class="test-button" onclick="testShowTab('dashboard')">Test Dashboard Tab</button>
+        <button class="test-button" onclick="testShowTab('users')">Test Users Tab</button>
+        <button class="test-button" onclick="testShowTab('settings')">Test Settings Tab</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Organization Admin Test</h2>
+        <div id="orgAdminStatus" class="status info">Ready to test org admin...</div>
+        <button class="test-button" onclick="testOrgAdmin()">Test OrgAdmin Instance</button>
+        <button class="test-button" onclick="initializeOrgAdmin()">Force Initialize OrgAdmin</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Direct Dashboard Access</h2>
+        <div id="dashboardStatus" class="status info">Ready to test direct access...</div>
+        <a href="/org-admin.html" class="test-button" style="text-decoration: none; display: inline-block;">Open Dashboard</a>
+        <button class="test-button" onclick="openDashboardInNewTab()">Open Dashboard (New Tab)</button>
+    </div>
+
+    <script>
+        // Test functions
+        function updateStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+        }
+
+        function testJavaScript() {
+            try {
+                if (typeof window.showTab === 'function') {
+                    updateStatus('jsStatus', '✅ JavaScript functions loaded successfully!', 'success');
+                } else {
+                    updateStatus('jsStatus', '❌ showTab function not found', 'error');
+                }
+            } catch (error) {
+                updateStatus('jsStatus', `❌ JavaScript error: ${error.message}`, 'error');
+            }
+        }
+
+        function testShowTab(tabName) {
+            try {
+                if (typeof window.showTab === 'function') {
+                    window.showTab(tabName);
+                    updateStatus('tabStatus', `✅ Called showTab('${tabName}') successfully!`, 'success');
+                } else {
+                    updateStatus('tabStatus', '❌ showTab function not available', 'error');
+                }
+            } catch (error) {
+                updateStatus('tabStatus', `❌ Tab test error: ${error.message}`, 'error');
+            }
+        }
+
+        function testOrgAdmin() {
+            try {
+                if (window.orgAdmin) {
+                    updateStatus('orgAdminStatus', `✅ OrgAdmin instance available! Token: ${window.orgAdmin.authToken || 'none'}`, 'success');
+                } else {
+                    updateStatus('orgAdminStatus', '❌ OrgAdmin instance not found', 'error');
+                }
+            } catch (error) {
+                updateStatus('orgAdminStatus', `❌ OrgAdmin test error: ${error.message}`, 'error');
+            }
+        }
+
+        function initializeOrgAdmin() {
+            try {
+                // Load the org-admin.js script if not already loaded
+                if (!document.querySelector('script[src*="org-admin.js"]')) {
+                    const script = document.createElement('script');
+                    script.src = '/js/org-admin.js';
+                    script.onload = () => {
+                        updateStatus('orgAdminStatus', '✅ org-admin.js loaded, initializing...', 'info');
+                        setTimeout(() => {
+                            if (window.orgAdmin) {
+                                updateStatus('orgAdminStatus', '✅ OrgAdmin initialized successfully!', 'success');
+                            } else {
+                                updateStatus('orgAdminStatus', '❌ OrgAdmin still not available after loading', 'error');
+                            }
+                        }, 1000);
+                    };
+                    script.onerror = () => {
+                        updateStatus('orgAdminStatus', '❌ Failed to load org-admin.js', 'error');
+                    };
+                    document.head.appendChild(script);
+                } else {
+                    updateStatus('orgAdminStatus', 'ℹ️ org-admin.js already loaded', 'info');
+                }
+            } catch (error) {
+                updateStatus('orgAdminStatus', `❌ Initialize error: ${error.message}`, 'error');
+            }
+        }
+
+        function openDashboardInNewTab() {
+            window.open('/org-admin.html', '_blank');
+            updateStatus('dashboardStatus', '🚀 Dashboard opened in new tab', 'success');
+        }
+
+        // Auto-run some tests
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🧪 Test page loaded');
+            updateStatus('jsStatus', 'Test page ready - click buttons to test', 'info');
+        });
+    </script>
+</body>
+</html>
