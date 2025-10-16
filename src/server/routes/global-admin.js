@@ -84,7 +84,7 @@ router.post('/organizations', requireGlobalAdmin, async (req, res) => {
 
     const organization = await OrganizationService.createOrganization(
       req.body, 
-      req.user.userId
+      req.user._id || req.user.id
     );
     
     res.status(201).json({ 

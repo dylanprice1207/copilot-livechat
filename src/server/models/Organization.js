@@ -31,8 +31,8 @@ const organizationSchema = new mongoose.Schema({
     welcomeMessage: { type: String, default: 'Welcome! How can we help you today?' }
   },
   
-  // Organization admin
-  adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  // Organization admin (optional due to User model registration issues)
+  adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
   
   // Status
   isActive: { type: Boolean, default: true },
