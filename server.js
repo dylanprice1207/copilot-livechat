@@ -935,6 +935,12 @@ async function handleOrgAdminMagicLogin(req, res, organization) {
 app.use('/:orgSlug/:route', async (req, res, next) => {
     const { orgSlug, route } = req.params;
     
+    // Skip static file paths
+    const staticPaths = ['js', 'css', 'images', 'assets', 'fonts', 'uploads'];
+    if (staticPaths.includes(route)) {
+        return next();
+    }
+    
     // Valid organization routes
     const validRoutes = ['admin', 'chat', 'agent', 'dashboard'];
     
