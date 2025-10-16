@@ -696,7 +696,10 @@ class OrganizationAdmin {
             const defaultOptions = {
                 headers: {
                     'Content-Type': 'application/json',
-                    ...(this.authToken && { 'Authorization': `Bearer ${this.authToken}` })
+                    ...(this.authToken && this.authToken !== 'demo-token' && { 
+                        'Authorization': `Bearer ${this.authToken}`,
+                        'X-Magic-Token': this.authToken
+                    })
                 }
             };
             

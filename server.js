@@ -232,12 +232,15 @@ app.use(session({
   }
 }));
 
-// Authentication middleware
+// Enhanced Authentication middleware (supports both regular JWT and magic tokens)
 const authenticateToken = async (req, res, next) => {
   console.log('🔍 Auth middleware hit:', req.method, req.path);
   
+  // Try to get token from different sources
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const bearerToken = authHeader && authHeader.split(' ')[1];
+  const magicToken = req.headers['x-magic-token'] || req.query.magic_token;
+  const token = bearerToken || magicToken;
 
   if (!token) {
     console.log('❌ No token provided');
@@ -246,6 +249,22 @@ const authenticateToken = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
+    
+    // Handle magic token authentication (for organization admin)
+    if (decoded.magicLogin && decoded.globalAdminId) {
+      console.log('✅ Magic token authenticated for org:', decoded.organizationSlug);
+      req.user = {
+        _id: decoded.globalAdminId,
+        username: decoded.globalAdminUsername || 'globaladmin',
+        role: 'admin',
+        organizationId: decoded.organizationId,
+        organizationSlug: decoded.organizationSlug,
+        magicLogin: true
+      };
+      return next();
+    }
+    
+    // Handle regular JWT token authentication
     const user = await User.findById(decoded.userId);
     if (!user) {
       console.log('❌ User not found');
