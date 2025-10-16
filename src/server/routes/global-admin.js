@@ -167,7 +167,7 @@ router.post('/magic-login', requireGlobalAdmin, async (req, res) => {
     
     const magicToken = jwt.sign(
       {
-        globalAdminId: req.user.userId,
+        globalAdminId: req.user._id,
         globalAdminUsername: req.user.username,
         organizationId: organizationId,
         organizationSlug: organizationSlug,

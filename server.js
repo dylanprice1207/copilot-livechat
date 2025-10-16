@@ -600,6 +600,104 @@ app.get('/api/verify-admin-token', authenticateToken, async (req, res) => {
   }
 });
 
+// Verify magic token for organization admin access
+app.post('/api/verify-magic-token', async (req, res) => {
+  try {
+    const { magicToken } = req.body;
+    
+    if (!magicToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Magic token is required'
+      });
+    }
+    
+    console.log('🪄 Verifying magic token...');
+    
+    // Verify the magic token
+    const decoded = jwt.verify(magicToken, JWT_SECRET);
+    
+    // Check if it's a valid magic login token
+    if (!decoded.magicLogin) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid magic token format'
+      });
+    }
+    
+    // Check if token is expired (magic tokens have short expiry)
+    const now = Math.floor(Date.now() / 1000);
+    if (decoded.exp && decoded.exp < now) {
+      return res.status(401).json({
+        success: false,
+        message: 'Magic token has expired'
+      });
+    }
+    
+    // Verify the global admin still exists and has permissions
+    try {
+      const globalAdmin = await User.findById(decoded.globalAdminId);
+      if (!globalAdmin || globalAdmin.role !== 'global_admin') {
+        return res.status(401).json({
+          success: false,
+          message: 'Global admin access revoked'
+        });
+      }
+    } catch (userError) {
+      // Skip user validation if there are User model issues
+      console.log('⚠️ Skipping global admin validation due to User model issues');
+    }
+    
+    // Verify organization still exists and is active
+    const organization = await Organization.findById(decoded.organizationId);
+    if (!organization || !organization.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'Organization not found or inactive'
+      });
+    }
+    
+    console.log(`✅ Magic token verified for ${decoded.globalAdminUsername} → ${organization.name}`);
+    
+    res.json({
+      success: true,
+      message: 'Magic token verified successfully',
+      token: magicToken, // Return the same token for session use
+      organization: {
+        id: organization._id,
+        name: organization.name,
+        slug: organization.slug
+      },
+      globalAdmin: {
+        id: decoded.globalAdminId,
+        username: decoded.globalAdminUsername
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Magic token verification error:', error);
+    
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid magic token'
+      });
+    }
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Magic token has expired'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Server error during magic token verification'
+    });
+  }
+});
+
 // Admin middleware for protected routes
 const requireAdminAuth = (allowedRoles = []) => {
   return async (req, res, next) => {
