@@ -1376,7 +1376,22 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🌐 DOM Content Loaded - Initializing Organization Admin');
     
     try {
+        // Preserve existing functions before creating new instance
+        const existingFunctions = {};
+        if (window.orgAdmin) {
+            for (const key in window.orgAdmin) {
+                if (typeof window.orgAdmin[key] === 'function') {
+                    existingFunctions[key] = window.orgAdmin[key];
+                }
+            }
+        }
+        
+        // Create new instance
         window.orgAdmin = new OrganizationAdmin();
+        
+        // Restore the global functions
+        Object.assign(window.orgAdmin, existingFunctions);
+        
         console.log('✅ OrganizationAdmin instance created successfully');
     } catch (error) {
         console.error('❌ Failed to create OrganizationAdmin instance:', error);
@@ -1389,9 +1404,24 @@ if (document.readyState === 'loading') {
 } else {
     console.log('🚀 DOM already loaded, initializing immediately');
     setTimeout(() => {
-        if (!window.orgAdmin) {
+        if (!window.orgAdmin || typeof window.orgAdmin.init !== 'function') {
             try {
+                // Preserve existing functions before creating new instance
+                const existingFunctions = {};
+                if (window.orgAdmin) {
+                    for (const key in window.orgAdmin) {
+                        if (typeof window.orgAdmin[key] === 'function') {
+                            existingFunctions[key] = window.orgAdmin[key];
+                        }
+                    }
+                }
+                
+                // Create new instance
                 window.orgAdmin = new OrganizationAdmin();
+                
+                // Restore the global functions
+                Object.assign(window.orgAdmin, existingFunctions);
+                
                 console.log('✅ OrganizationAdmin instance created successfully (immediate)');
             } catch (error) {
                 console.error('❌ Failed to create OrganizationAdmin instance (immediate):', error);
