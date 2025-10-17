@@ -1078,7 +1078,113 @@ window.saveOrgSettings = async function() {
     } catch (error) {
         window.orgAdmin.showError('Error saving settings: ' + error.message);
     }
-};
+}
+
+    // Department Management Methods
+    viewDepartmentAgents(deptId) {
+        console.log(`👥 Viewing agents for department: ${deptId}`);
+        
+        // Mock data for department agents
+        const mockAgents = [
+            { name: 'Sarah Johnson', status: 'online', activeChats: 3, rating: 4.9 },
+            { name: 'Mike Chen', status: 'busy', activeChats: 5, rating: 4.8 },
+            { name: 'Lisa Garcia', status: 'offline', activeChats: 0, rating: 4.7 }
+        ];
+        
+        // Create a detailed view
+        const agentsList = mockAgents.map(agent => 
+            `• ${agent.name} (${agent.status}) - ${agent.activeChats} chats - ⭐${agent.rating}`
+        ).join('\n');
+        
+        alert(`👥 Department Agents:\n\n${agentsList}\n\n(Demo Mode - Real implementation would show detailed agent dashboard)`);
+        
+        this.showSuccess(`Viewed ${mockAgents.length} agents for department ${deptId}`);
+    }
+
+    assignAgents(deptId) {
+        console.log(`➕ Assigning agents to department: ${deptId}`);
+        
+        // Mock available agents
+        const availableAgents = [
+            'John Doe (Available)', 
+            'Jane Smith (Available)', 
+            'Bob Wilson (Available)', 
+            'Alice Johnson (Available)',
+            'Tom Rodriguez (Available)',
+            'Emma Davis (Available)'
+        ];
+        
+        // Simple multi-select simulation
+        const selectedAgent = prompt(
+            `Available Agents:\n${availableAgents.map((agent, i) => `${i+1}. ${agent}`).join('\n')}\n\nEnter agent numbers to assign (e.g., 1,3,5):`
+        );
+        
+        if (selectedAgent) {
+            const indices = selectedAgent.split(',').map(i => parseInt(i.trim())).filter(i => i >= 1 && i <= availableAgents.length);
+            const assigned = indices.map(i => availableAgents[i-1]);
+            
+            if (assigned.length > 0) {
+                console.log(`✅ Assigned agents:`, assigned);
+                this.showSuccess(`Successfully assigned ${assigned.length} agents to department (Demo mode)`);
+                
+                // Refresh the departments view
+                setTimeout(() => {
+                    if (this.currentTab === 'departments') {
+                        this.loadDepartmentsData();
+                    }
+                }, 1000);
+            }
+        }
+    }
+
+    editDepartment(deptId) {
+        console.log(`✏️ Editing department: ${deptId}`);
+        
+        // Create a modal-like dialog for editing
+        const currentName = prompt('Enter new department name:');
+        if (currentName) {
+            console.log(`📝 Updating department ${deptId} to: ${currentName}`);
+            this.showSuccess(`Department updated to "${currentName}" (Demo mode)`);
+            
+            // Refresh the departments view
+            setTimeout(() => {
+                if (this.currentTab === 'departments') {
+                    this.loadDepartmentsData();
+                }
+            }, 1000);
+        }
+    }
+
+    createDepartment() {
+        const deptName = prompt('Enter department name:');
+        if (deptName) {
+            console.log(`🏢 Creating department: ${deptName}`);
+            this.showSuccess(`Department "${deptName}" created successfully! (Demo mode)`);
+            
+            // Refresh the departments view
+            setTimeout(() => {
+                if (this.currentTab === 'departments') {
+                    this.loadDepartmentsData();
+                }
+            }, 1000);
+        }
+    }
+
+    deleteDepartment(deptId) {
+        if (confirm('⚠️ Are you sure you want to delete this department?\n\nThis action cannot be undone and will unassign all agents.')) {
+            console.log(`🗑️ Deleting department: ${deptId}`);
+            this.showSuccess(`Department ${deptId} deleted successfully (Demo mode)`);
+            
+            // Refresh the departments view
+            setTimeout(() => {
+                if (this.currentTab === 'departments') {
+                    this.loadDepartmentsData();
+                }
+            }, 1000);
+        }
+    }
+
+}
 
 // Initialize orgAdmin object for global function access
 window.orgAdmin = window.orgAdmin || {};
@@ -1111,38 +1217,6 @@ window.deleteUser = function(userId) {
         console.log(`🗑️ Deleting user: ${userId}`);
         window.orgAdmin.showSuccess(`User ${userId} deleted successfully (Demo mode)`);
         // In real implementation, this would call the delete API and refresh the table
-    }
-};
-
-window.orgAdmin.editDepartment = function(deptId) {
-    console.log(`✏️ Editing department: ${deptId}`);
-    
-    // Create a modal-like dialog for editing
-    const currentName = prompt('Enter new department name:');
-    if (currentName) {
-        console.log(`📝 Updating department ${deptId} to: ${currentName}`);
-        window.orgAdmin.showSuccess(`Department updated to "${currentName}" (Demo mode)`);
-        
-        // Refresh the departments view
-        setTimeout(() => {
-            if (window.orgAdmin.currentTab === 'departments') {
-                window.orgAdmin.loadDepartmentsData();
-            }
-        }, 1000);
-    }
-};
-
-window.orgAdmin.deleteDepartment = function(deptId) {
-    if (confirm('⚠️ Are you sure you want to delete this department?\n\nThis action cannot be undone and will unassign all agents.')) {
-        console.log(`🗑️ Deleting department: ${deptId}`);
-        window.orgAdmin.showSuccess(`Department ${deptId} deleted successfully (Demo mode)`);
-        
-        // Refresh the departments view
-        setTimeout(() => {
-            if (window.orgAdmin.currentTab === 'departments') {
-                window.orgAdmin.loadDepartmentsData();
-            }
-        }, 1000);
     }
 };
 
@@ -1199,78 +1273,6 @@ window.testBotPersonalities = function() {
     
     console.log('🧪 Testing bot personalities');
     window.orgAdmin.showSuccess('Bot personality test completed! (Demo mode)');
-};
-
-// Department management functions
-window.orgAdmin.viewDepartmentAgents = function(deptId) {
-    console.log(`👥 Viewing agents for department: ${deptId}`);
-    
-    // Mock data for department agents
-    const mockAgents = [
-        { name: 'Sarah Johnson', status: 'online', activeChats: 3, rating: 4.9 },
-        { name: 'Mike Chen', status: 'busy', activeChats: 5, rating: 4.8 },
-        { name: 'Lisa Garcia', status: 'offline', activeChats: 0, rating: 4.7 }
-    ];
-    
-    // Create a detailed view
-    const agentsList = mockAgents.map(agent => 
-        `• ${agent.name} (${agent.status}) - ${agent.activeChats} chats - ⭐${agent.rating}`
-    ).join('\n');
-    
-    alert(`👥 Department Agents:\n\n${agentsList}\n\n(Demo Mode - Real implementation would show detailed agent dashboard)`);
-    
-    window.orgAdmin.showSuccess(`Viewed ${mockAgents.length} agents for department ${deptId}`);
-};
-
-window.orgAdmin.assignAgents = function(deptId) {
-    console.log(`➕ Assigning agents to department: ${deptId}`);
-    
-    // Mock available agents
-    const availableAgents = [
-        'John Doe (Available)', 
-        'Jane Smith (Available)', 
-        'Bob Wilson (Available)', 
-        'Alice Johnson (Available)',
-        'Tom Rodriguez (Available)',
-        'Emma Davis (Available)'
-    ];
-    
-    // Simple multi-select simulation
-    const selectedAgent = prompt(
-        `Available Agents:\n${availableAgents.map((agent, i) => `${i+1}. ${agent}`).join('\n')}\n\nEnter agent numbers to assign (e.g., 1,3,5):`
-    );
-    
-    if (selectedAgent) {
-        const indices = selectedAgent.split(',').map(i => parseInt(i.trim())).filter(i => i >= 1 && i <= availableAgents.length);
-        const assigned = indices.map(i => availableAgents[i-1]);
-        
-        if (assigned.length > 0) {
-            console.log(`✅ Assigned agents:`, assigned);
-            window.orgAdmin.showSuccess(`Successfully assigned ${assigned.length} agents to department (Demo mode)`);
-            
-            // Refresh the departments view
-            setTimeout(() => {
-                if (window.orgAdmin.currentTab === 'departments') {
-                    window.orgAdmin.loadDepartmentsData();
-                }
-            }, 1000);
-        }
-    }
-};
-
-window.orgAdmin.createDepartment = function() {
-    const deptName = prompt('Enter department name:');
-    if (deptName) {
-        console.log(`🏢 Creating department: ${deptName}`);
-        window.orgAdmin.showSuccess(`Department "${deptName}" created successfully! (Demo mode)`);
-        
-        // Refresh the departments view
-        setTimeout(() => {
-            if (window.orgAdmin.currentTab === 'departments') {
-                window.orgAdmin.loadDepartmentsData();
-            }
-        }, 1000);
-    }
 };
 
 // ChatFlow management functions
@@ -1376,21 +1378,11 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🌐 DOM Content Loaded - Initializing Organization Admin');
     
     try {
-        // Preserve existing functions before creating new instance
-        const existingFunctions = {};
-        if (window.orgAdmin) {
-            for (const key in window.orgAdmin) {
-                if (typeof window.orgAdmin[key] === 'function') {
-                    existingFunctions[key] = window.orgAdmin[key];
-                }
-            }
-        }
-        
         // Create new instance
         window.orgAdmin = new OrganizationAdmin();
         
-        // Restore the global functions
-        Object.assign(window.orgAdmin, existingFunctions);
+        // Debug: List available functions
+        console.log('🔍 Available orgAdmin functions:', Object.keys(window.orgAdmin).filter(key => typeof window.orgAdmin[key] === 'function'));
         
         console.log('✅ OrganizationAdmin instance created successfully');
     } catch (error) {
@@ -1406,21 +1398,11 @@ if (document.readyState === 'loading') {
     setTimeout(() => {
         if (!window.orgAdmin || typeof window.orgAdmin.init !== 'function') {
             try {
-                // Preserve existing functions before creating new instance
-                const existingFunctions = {};
-                if (window.orgAdmin) {
-                    for (const key in window.orgAdmin) {
-                        if (typeof window.orgAdmin[key] === 'function') {
-                            existingFunctions[key] = window.orgAdmin[key];
-                        }
-                    }
-                }
-                
                 // Create new instance
                 window.orgAdmin = new OrganizationAdmin();
                 
-                // Restore the global functions
-                Object.assign(window.orgAdmin, existingFunctions);
+                // Debug: List available functions
+                console.log('🔍 Available orgAdmin functions:', Object.keys(window.orgAdmin).filter(key => typeof window.orgAdmin[key] === 'function'));
                 
                 console.log('✅ OrganizationAdmin instance created successfully (immediate)');
             } catch (error) {
