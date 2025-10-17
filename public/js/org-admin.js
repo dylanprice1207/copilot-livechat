@@ -1080,6 +1080,9 @@ window.saveOrgSettings = async function() {
     }
 };
 
+// Initialize orgAdmin object for global function access
+window.orgAdmin = window.orgAdmin || {};
+
 window.toggleDepartmentSelection = function() {
     const role = document.getElementById('userRole').value;
     const departmentGroup = document.getElementById('departmentGroup');
@@ -1199,7 +1202,6 @@ window.testBotPersonalities = function() {
 };
 
 // Department management functions
-window.orgAdmin = window.orgAdmin || {};
 window.orgAdmin.viewDepartmentAgents = function(deptId) {
     console.log(`👥 Viewing agents for department: ${deptId}`);
     
