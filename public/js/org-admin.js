@@ -572,23 +572,7 @@ class OrganizationAdmin {
         if (analyticsContainer) {
             // Handle both direct data and nested response data
             const responseData = data?.data || data;
-            const analyticsData = responseData || {
-                chatsToday: 156,
-                responseTime: 145,
-                satisfaction: 4.7,
-                topAgents: [
-                    { name: 'John Doe', chats: 34, rating: 4.9 },
-                    { name: 'Jane Smith', chats: 28, rating: 4.8 },
-                    { name: 'Bob Johnson', chats: 22, rating: 4.6 }
-                ],
-                hourlyStats: [12, 18, 25, 31, 28, 35, 42, 38, 29, 24, 19, 15],
-                departmentStats: [
-                    { name: 'Sales', chats: 45, satisfaction: 4.8 },
-                    { name: 'Support', chats: 67, satisfaction: 4.6 },
-                    { name: 'Technical', chats: 32, satisfaction: 4.9 },
-                    { name: 'Billing', chats: 12, satisfaction: 4.4 }
-                ]
-            };
+            const analyticsData = responseData;
             
             // Find or create analytics content area
             let analyticsContent = analyticsContainer.querySelector('.analytics-content');
@@ -602,26 +586,26 @@ class OrganizationAdmin {
                 <div class="analytics-grid">
                     <div class="analytics-card">
                         <h3><i class="fas fa-comments"></i> Today's Chats</h3>
-                        <div class="metric-value">${analyticsData.chatsToday}</div>
-                        <div class="metric-change">+12% from yesterday</div>
+                        <div class="metric-value">${analyticsData?.chatsToday || 0}</div>
+                        <div class="metric-change">${analyticsData?.chatsTrend || 'No data available'}</div>
                     </div>
                     
                     <div class="analytics-card">
                         <h3><i class="fas fa-clock"></i> Avg Response Time</h3>
-                        <div class="metric-value">${analyticsData.responseTime}s</div>
-                        <div class="metric-change">-8% improvement</div>
+                        <div class="metric-value">${analyticsData?.avgResponseTime || 'N/A'}</div>
+                        <div class="metric-change">${analyticsData?.responseTrend || 'No data available'}</div>
                     </div>
                     
                     <div class="analytics-card">
                         <h3><i class="fas fa-star"></i> Satisfaction</h3>
-                        <div class="metric-value">${analyticsData.satisfaction}/5</div>
-                        <div class="metric-change">+0.2 from last week</div>
+                        <div class="metric-value">${analyticsData?.satisfaction || 'N/A'}</div>
+                        <div class="metric-change">${analyticsData?.satisfactionTrend || 'No data available'}</div>
                     </div>
                     
                     <div class="analytics-card">
                         <h3><i class="fas fa-users"></i> Active Agents</h3>
-                        <div class="metric-value">12</div>
-                        <div class="metric-change">3 online now</div>
+                        <div class="metric-value">${analyticsData?.activeAgents || 0}</div>
+                        <div class="metric-change">${analyticsData?.onlineAgents || 0} online now</div>
                     </div>
                 </div>
                 
@@ -687,16 +671,11 @@ class OrganizationAdmin {
     }
     
     async makeAuthenticatedRequest(url, options = {}) {
-        // In demo mode, return mock responses
-        if (this.authToken === 'demo-token') {
-            return this.getMockResponse(url, options);
-        }
-        
         try {
             const defaultOptions = {
                 headers: {
                     'Content-Type': 'application/json',
-                    ...(this.authToken && this.authToken !== 'demo-token' && { 
+                    ...(this.authToken && { 
                         'Authorization': `Bearer ${this.authToken}`,
                         'X-Magic-Token': this.authToken
                     })
@@ -705,78 +684,18 @@ class OrganizationAdmin {
             
             const response = await fetch(url, { ...defaultOptions, ...options });
             
-            // If unauthorized, switch to demo mode
+            // If unauthorized, show error instead of demo mode
             if (response.status === 401) {
-                console.log('🎭 API call unauthorized, switching to demo mode...');
-                this.authToken = 'demo-token';
-                this.showSuccess('🎮 Switched to Demo Mode - Full functionality available!');
-                return this.getMockResponse(url, options);
+                console.error('❌ Authentication failed for API call');
+                this.showError('Authentication required. Please login again.');
+                throw new Error('Authentication required');
             }
             
             return response;
         } catch (error) {
-            console.log('🎭 API call failed, using demo mode:', error.message);
-            this.authToken = 'demo-token';
-            return this.getMockResponse(url, options);
+            console.error('🚫 API call failed:', error.message);
+            throw error;
         }
-    }
-    
-    getMockResponse(url, options) {
-        console.log(`🎭 Mock response for: ${options.method || 'GET'} ${url}`);
-        
-        const mockResponses = {
-            '/api/admin/dashboard': { 
-                stats: { totalUsers: 45, activeChats: 8, avgResponseTime: '2.3min', satisfaction: '94%' } 
-            },
-            '/api/admin/users': { 
-                users: [
-                    { _id: '1', username: 'john.doe', email: 'john@demo.com', role: 'agent', status: 'online', createdAt: new Date() },
-                    { _id: '2', username: 'jane.smith', email: 'jane@demo.com', role: 'admin', status: 'online', createdAt: new Date() }
-                ]
-            },
-            '/api/admin/departments': {
-                departments: [
-                    { _id: '1', name: 'Sales', agentCount: 5, status: 'active' },
-                    { _id: '2', name: 'Technical Support', agentCount: 8, status: 'active' }
-                ]
-            },
-            '/api/ai/config': {
-                openaiKey: 'sk-demo...key',
-                temperature: 0.7,
-                maxTokens: 500,
-                model: 'gpt-3.5-turbo',
-                chatflow: {
-                    enabled: true,
-                    mode: 'auto',
-                    welcomeMessage: 'Hello! How can I help you today?',
-                    fallbackMessage: "I'm not sure I understand. Could you please rephrase?"
-                }
-            },
-            '/api/admin/analytics': {
-                chatsToday: 156,
-                responseTime: 145,
-                satisfaction: 4.7,
-                topAgents: [
-                    { name: 'John Doe', chats: 34, rating: 4.9 },
-                    { name: 'Jane Smith', chats: 28, rating: 4.8 },
-                    { name: 'Bob Johnson', chats: 22, rating: 4.6 }
-                ],
-                hourlyStats: [12, 18, 25, 31, 28, 35, 42, 38, 29, 24, 19, 15],
-                departmentStats: [
-                    { name: 'Sales', chats: 45, satisfaction: 4.8 },
-                    { name: 'Support', chats: 67, satisfaction: 4.6 },
-                    { name: 'Technical', chats: 32, satisfaction: 4.9 },
-                    { name: 'Billing', chats: 12, satisfaction: 4.4 }
-                ]
-            }
-        };
-        
-        // Mock successful response
-        return Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve(mockResponses[url] || { success: true, message: 'Demo response' })
-        });
     }
     
     updateDashboardStats(data) {
@@ -789,10 +708,10 @@ class OrganizationAdmin {
         };
         
         if (data.stats) {
-            if (statsElements.totalUsers) statsElements.totalUsers.textContent = data.stats.totalUsers || '45';
-            if (statsElements.activeAgents) statsElements.activeAgents.textContent = data.stats.activeAgents || '12';
-            if (statsElements.totalChats) statsElements.totalChats.textContent = data.stats.totalChats || '1,234';
-            if (statsElements.aiInteractions) statsElements.aiInteractions.textContent = data.stats.aiInteractions || '890';
+            if (statsElements.totalUsers) statsElements.totalUsers.textContent = data.stats.totalUsers || '0';
+            if (statsElements.activeAgents) statsElements.activeAgents.textContent = data.stats.activeAgents || '0';
+            if (statsElements.totalChats) statsElements.totalChats.textContent = data.stats.totalChats || '0';
+            if (statsElements.aiInteractions) statsElements.aiInteractions.textContent = data.stats.aiInteractions || '0';
         }
         
         console.log('📊 Dashboard stats updated:', data.stats);
@@ -957,59 +876,104 @@ class OrganizationAdmin {
     }
 
     // Department Management Methods
-    viewDepartmentAgents(deptId) {
+    async viewDepartmentAgents(deptId) {
         console.log(`👥 Viewing agents for department: ${deptId}`);
         
-        // Mock data for department agents
-        const mockAgents = [
-            { name: 'Sarah Johnson', status: 'online', activeChats: 3, rating: 4.9 },
-            { name: 'Mike Chen', status: 'busy', activeChats: 5, rating: 4.8 },
-            { name: 'Lisa Garcia', status: 'offline', activeChats: 0, rating: 4.7 }
-        ];
-        
-        // Create a detailed view
-        const agentsList = mockAgents.map(agent => 
-            `• ${agent.name} (${agent.status}) - ${agent.activeChats} chats - ⭐${agent.rating}`
-        ).join('\n');
-        
-        alert(`👥 Department Agents:\n\n${agentsList}\n\n(Demo Mode - Real implementation would show detailed agent dashboard)`);
-        
-        this.showSuccess(`Viewed ${mockAgents.length} agents for department ${deptId}`);
+        try {
+            // Get real users assigned to this department
+            const response = await this.makeAuthenticatedRequest(`/api/admin/departments/${deptId}/users`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                const agents = data.users || [];
+                
+                if (agents.length === 0) {
+                    alert(`👥 Department Agents:\n\nNo agents currently assigned to this department.\n\nUse "Assign Agents" to add team members.`);
+                } else {
+                    // Create a detailed view with real data
+                    const agentsList = agents.map(agent => 
+                        `• ${agent.username} (${agent.email}) - ${agent.isOnline ? '🟢 Online' : '🔴 Offline'} - Role: ${agent.role}`
+                    ).join('\n');
+                    
+                    alert(`👥 Department Agents (${agents.length} total):\n\n${agentsList}`);
+                }
+                
+                this.showSuccess(`Viewed ${agents.length} agents for department ${deptId}`);
+            }
+        } catch (error) {
+            console.error('Error fetching department agents:', error);
+            this.showError('Failed to load department agents. Please try again.');
+        }
     }
 
-    assignAgents(deptId) {
-        console.log(`➕ Assigning agents to department: ${deptId}`);
+    async assignAgents(deptId) {
+        console.log(`🔗 Assigning agents to department: ${deptId}`);
         
-        // Mock available agents
-        const availableAgents = [
-            'John Doe (Available)', 
-            'Jane Smith (Available)', 
-            'Bob Wilson (Available)', 
-            'Alice Johnson (Available)',
-            'Tom Rodriguez (Available)',
-            'Emma Davis (Available)'
-        ];
-        
-        // Simple multi-select simulation
-        const selectedAgent = prompt(
-            `Available Agents:\n${availableAgents.map((agent, i) => `${i+1}. ${agent}`).join('\n')}\n\nEnter agent numbers to assign (e.g., 1,3,5):`
-        );
-        
-        if (selectedAgent) {
-            const indices = selectedAgent.split(',').map(i => parseInt(i.trim())).filter(i => i >= 1 && i <= availableAgents.length);
-            const assigned = indices.map(i => availableAgents[i-1]);
+        try {
+            // Get available users from database
+            const usersResponse = await this.makeAuthenticatedRequest('/api/admin/users/available');
             
-            if (assigned.length > 0) {
-                console.log(`✅ Assigned agents:`, assigned);
-                this.showSuccess(`Successfully assigned ${assigned.length} agents to department (Demo mode)`);
-                
-                // Refresh the departments view
-                setTimeout(() => {
-                    if (this.currentTab === 'departments') {
-                        this.loadDepartmentsData();
-                    }
-                }, 1000);
+            if (!usersResponse.ok) {
+                throw new Error('Failed to fetch available users');
             }
+            
+            const usersData = await usersResponse.json();
+            const availableUsers = usersData.users || [];
+            
+            if (availableUsers.length === 0) {
+                alert('📋 No available users found in the system.\n\nPlease create user accounts first before assigning them to departments.');
+                return;
+            }
+            
+            // Create a selection interface
+            const usersList = availableUsers.map((user, index) => 
+                `${index + 1}. ${user.username} (${user.email}) - Role: ${user.role}`
+            ).join('\n');
+            
+            const selection = prompt(`🔗 Assign Agents to Department\n\nAvailable Users:\n${usersList}\n\nEnter user numbers to assign (comma-separated, e.g., 1,3,5):`);
+            
+            if (selection) {
+                const selectedIndexes = selection.split(',').map(s => parseInt(s.trim()) - 1);
+                const selectedUsers = selectedIndexes
+                    .filter(index => index >= 0 && index < availableUsers.length)
+                    .map(index => availableUsers[index]);
+                
+                if (selectedUsers.length === 0) {
+                    alert('❌ No valid users selected. Please try again.');
+                    return;
+                }
+                
+                // Assign each selected user to the department
+                const assignmentPromises = selectedUsers.map(user => 
+                    this.makeAuthenticatedRequest(`/api/admin/departments/${deptId}/assign`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: user._id })
+                    })
+                );
+                
+                const results = await Promise.all(assignmentPromises);
+                const successfulAssignments = results.filter(response => response.ok);
+                
+                if (successfulAssignments.length === selectedUsers.length) {
+                    const assignedNames = selectedUsers.map(user => user.username).join(', ');
+                    alert(`✅ Successfully assigned ${selectedUsers.length} agents:\n\n${assignedNames}\n\nThey can now handle customer inquiries for this department.`);
+                    this.showSuccess(`Assigned ${selectedUsers.length} agents to department ${deptId}`);
+                    
+                    // Refresh the departments view
+                    setTimeout(() => {
+                        if (this.currentTab === 'departments') {
+                            this.loadDepartmentsData();
+                        }
+                    }, 1000);
+                } else {
+                    const failedCount = selectedUsers.length - successfulAssignments.length;
+                    alert(`⚠️ Partial success: ${successfulAssignments.length} assigned, ${failedCount} failed.\n\nSome assignments may have failed. Please check the console for details.`);
+                }
+            }
+        } catch (error) {
+            console.error('Error assigning agents:', error);
+            this.showError('Failed to assign agents. Please try again.');
         }
     }
 
