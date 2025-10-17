@@ -9,9 +9,20 @@ const AnalyticsService = require('../services/AnalyticsService');
  */
 router.get('/users', async (req, res) => {
     try {
-        const users = await User.find({})
+        // Build query for users
+        let userQuery = {};
+        
+        // If this is an organization admin (magic login), only show users from that organization
+        if (req.user.magicLogin && req.user.organizationId) {
+            console.log('🏢 Filtering /users for organization:', req.user.organizationSlug);
+            userQuery.organizationId = req.user.organizationId;
+        }
+        
+        const users = await User.find(userQuery)
             .select('-password')
             .sort({ createdAt: -1 });
+        
+        console.log(`👥 Found ${users.length} users for organization`);
             
         res.json({
             success: true,
@@ -446,6 +457,12 @@ router.get('/users/available', async (req, res) => {
     try {
         const { departmentId } = req.query;
         
+        // Debug logging
+        console.log('🔍 DEBUG: /users/available endpoint called');
+        console.log('🔍 DEBUG: req.user:', JSON.stringify(req.user, null, 2));
+        console.log('🔍 DEBUG: req.user.magicLogin:', req.user.magicLogin);
+        console.log('🔍 DEBUG: req.user.organizationId:', req.user.organizationId);
+        
         let userQuery = {
             role: { $in: ['agent', 'admin'] },
             $or: [
@@ -459,13 +476,18 @@ router.get('/users/available', async (req, res) => {
         if (req.user.magicLogin && req.user.organizationId) {
             console.log('🏢 Filtering users for organization:', req.user.organizationSlug);
             userQuery.organizationId = req.user.organizationId;
+        } else {
+            console.log('⚠️ NOT filtering by organization - magic login or organizationId missing');
         }
+        
+        console.log('🔍 DEBUG: Final userQuery:', JSON.stringify(userQuery, null, 2));
         
         const users = await User.find(userQuery)
             .select('username email role isOnline departments organizationId')
             .sort({ username: 1 });
         
         console.log(`👥 Found ${users.length} available users for assignment`);
+        console.log('🔍 DEBUG: First few users:', users.slice(0, 3).map(u => ({ username: u.username, organizationId: u.organizationId })));
         
         res.json({
             success: true,
