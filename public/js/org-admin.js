@@ -955,6 +955,111 @@ class OrganizationAdmin {
             }
         }, 5000);
     }
+
+    // Department Management Methods
+    viewDepartmentAgents(deptId) {
+        console.log(`👥 Viewing agents for department: ${deptId}`);
+        
+        // Mock data for department agents
+        const mockAgents = [
+            { name: 'Sarah Johnson', status: 'online', activeChats: 3, rating: 4.9 },
+            { name: 'Mike Chen', status: 'busy', activeChats: 5, rating: 4.8 },
+            { name: 'Lisa Garcia', status: 'offline', activeChats: 0, rating: 4.7 }
+        ];
+        
+        // Create a detailed view
+        const agentsList = mockAgents.map(agent => 
+            `• ${agent.name} (${agent.status}) - ${agent.activeChats} chats - ⭐${agent.rating}`
+        ).join('\n');
+        
+        alert(`👥 Department Agents:\n\n${agentsList}\n\n(Demo Mode - Real implementation would show detailed agent dashboard)`);
+        
+        this.showSuccess(`Viewed ${mockAgents.length} agents for department ${deptId}`);
+    }
+
+    assignAgents(deptId) {
+        console.log(`➕ Assigning agents to department: ${deptId}`);
+        
+        // Mock available agents
+        const availableAgents = [
+            'John Doe (Available)', 
+            'Jane Smith (Available)', 
+            'Bob Wilson (Available)', 
+            'Alice Johnson (Available)',
+            'Tom Rodriguez (Available)',
+            'Emma Davis (Available)'
+        ];
+        
+        // Simple multi-select simulation
+        const selectedAgent = prompt(
+            `Available Agents:\n${availableAgents.map((agent, i) => `${i+1}. ${agent}`).join('\n')}\n\nEnter agent numbers to assign (e.g., 1,3,5):`
+        );
+        
+        if (selectedAgent) {
+            const indices = selectedAgent.split(',').map(i => parseInt(i.trim())).filter(i => i >= 1 && i <= availableAgents.length);
+            const assigned = indices.map(i => availableAgents[i-1]);
+            
+            if (assigned.length > 0) {
+                console.log(`✅ Assigned agents:`, assigned);
+                this.showSuccess(`Successfully assigned ${assigned.length} agents to department (Demo mode)`);
+                
+                // Refresh the departments view
+                setTimeout(() => {
+                    if (this.currentTab === 'departments') {
+                        this.loadDepartmentsData();
+                    }
+                }, 1000);
+            }
+        }
+    }
+
+    editDepartment(deptId) {
+        console.log(`✏️ Editing department: ${deptId}`);
+        
+        // Create a modal-like dialog for editing
+        const currentName = prompt('Enter new department name:');
+        if (currentName) {
+            console.log(`📝 Updating department ${deptId} to: ${currentName}`);
+            this.showSuccess(`Department updated to "${currentName}" (Demo mode)`);
+            
+            // Refresh the departments view
+            setTimeout(() => {
+                if (this.currentTab === 'departments') {
+                    this.loadDepartmentsData();
+                }
+            }, 1000);
+        }
+    }
+
+    createDepartment() {
+        const deptName = prompt('Enter department name:');
+        if (deptName) {
+            console.log(`🏢 Creating department: ${deptName}`);
+            this.showSuccess(`Department "${deptName}" created successfully! (Demo mode)`);
+            
+            // Refresh the departments view
+            setTimeout(() => {
+                if (this.currentTab === 'departments') {
+                    this.loadDepartmentsData();
+                }
+            }, 1000);
+        }
+    }
+
+    deleteDepartment(deptId) {
+        if (confirm('⚠️ Are you sure you want to delete this department?\n\nThis action cannot be undone and will unassign all agents.')) {
+            console.log(`🗑️ Deleting department: ${deptId}`);
+            this.showSuccess(`Department ${deptId} deleted successfully (Demo mode)`);
+            
+            // Refresh the departments view
+            setTimeout(() => {
+                if (this.currentTab === 'departments') {
+                    this.loadDepartmentsData();
+                }
+            }, 1000);
+        }
+    }
+
 }
 
 // Global functions referenced by HTML onclick handlers
@@ -1078,111 +1183,6 @@ window.saveOrgSettings = async function() {
     } catch (error) {
         window.orgAdmin.showError('Error saving settings: ' + error.message);
     }
-
-    // Department Management Methods
-    viewDepartmentAgents(deptId) {
-        console.log(`👥 Viewing agents for department: ${deptId}`);
-        
-        // Mock data for department agents
-        const mockAgents = [
-            { name: 'Sarah Johnson', status: 'online', activeChats: 3, rating: 4.9 },
-            { name: 'Mike Chen', status: 'busy', activeChats: 5, rating: 4.8 },
-            { name: 'Lisa Garcia', status: 'offline', activeChats: 0, rating: 4.7 }
-        ];
-        
-        // Create a detailed view
-        const agentsList = mockAgents.map(agent => 
-            `• ${agent.name} (${agent.status}) - ${agent.activeChats} chats - ⭐${agent.rating}`
-        ).join('\n');
-        
-        alert(`👥 Department Agents:\n\n${agentsList}\n\n(Demo Mode - Real implementation would show detailed agent dashboard)`);
-        
-        this.showSuccess(`Viewed ${mockAgents.length} agents for department ${deptId}`);
-    }
-
-    assignAgents(deptId) {
-        console.log(`➕ Assigning agents to department: ${deptId}`);
-        
-        // Mock available agents
-        const availableAgents = [
-            'John Doe (Available)', 
-            'Jane Smith (Available)', 
-            'Bob Wilson (Available)', 
-            'Alice Johnson (Available)',
-            'Tom Rodriguez (Available)',
-            'Emma Davis (Available)'
-        ];
-        
-        // Simple multi-select simulation
-        const selectedAgent = prompt(
-            `Available Agents:\n${availableAgents.map((agent, i) => `${i+1}. ${agent}`).join('\n')}\n\nEnter agent numbers to assign (e.g., 1,3,5):`
-        );
-        
-        if (selectedAgent) {
-            const indices = selectedAgent.split(',').map(i => parseInt(i.trim())).filter(i => i >= 1 && i <= availableAgents.length);
-            const assigned = indices.map(i => availableAgents[i-1]);
-            
-            if (assigned.length > 0) {
-                console.log(`✅ Assigned agents:`, assigned);
-                this.showSuccess(`Successfully assigned ${assigned.length} agents to department (Demo mode)`);
-                
-                // Refresh the departments view
-                setTimeout(() => {
-                    if (this.currentTab === 'departments') {
-                        this.loadDepartmentsData();
-                    }
-                }, 1000);
-            }
-        }
-    }
-
-    editDepartment(deptId) {
-        console.log(`✏️ Editing department: ${deptId}`);
-        
-        // Create a modal-like dialog for editing
-        const currentName = prompt('Enter new department name:');
-        if (currentName) {
-            console.log(`📝 Updating department ${deptId} to: ${currentName}`);
-            this.showSuccess(`Department updated to "${currentName}" (Demo mode)`);
-            
-            // Refresh the departments view
-            setTimeout(() => {
-                if (this.currentTab === 'departments') {
-                    this.loadDepartmentsData();
-                }
-            }, 1000);
-        }
-    }
-
-    createDepartment() {
-        const deptName = prompt('Enter department name:');
-        if (deptName) {
-            console.log(`🏢 Creating department: ${deptName}`);
-            this.showSuccess(`Department "${deptName}" created successfully! (Demo mode)`);
-            
-            // Refresh the departments view
-            setTimeout(() => {
-                if (this.currentTab === 'departments') {
-                    this.loadDepartmentsData();
-                }
-            }, 1000);
-        }
-    }
-
-    deleteDepartment(deptId) {
-        if (confirm('⚠️ Are you sure you want to delete this department?\n\nThis action cannot be undone and will unassign all agents.')) {
-            console.log(`🗑️ Deleting department: ${deptId}`);
-            this.showSuccess(`Department ${deptId} deleted successfully (Demo mode)`);
-            
-            // Refresh the departments view
-            setTimeout(() => {
-                if (this.currentTab === 'departments') {
-                    this.loadDepartmentsData();
-                }
-            }, 1000);
-        }
-    }
-
 }
 
 // Initialize orgAdmin object for global function access
