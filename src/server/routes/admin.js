@@ -349,7 +349,7 @@ router.get('/departments', async (req, res) => {
                 
                 if (realDepartments.length > 0) {
                     departments = realDepartments.map(dept => ({
-                        id: dept._id,
+                        _id: dept._id,
                         name: dept.name,
                         description: dept.description || `${dept.name} department`,
                         agentCount: dept.agents ? dept.agents.length : 0,
@@ -362,7 +362,7 @@ router.get('/departments', async (req, res) => {
                     // Create default departments if none exist
                     departments = [
                         {
-                            id: 'default-support',
+                            _id: 'default-support',
                             name: 'Customer Support',
                             description: 'Handle customer inquiries and support requests',
                             agentCount: Math.floor(Math.random() * 15) + 5,
@@ -371,7 +371,7 @@ router.get('/departments', async (req, res) => {
                             status: 'active'
                         },
                         {
-                            id: 'default-sales', 
+                            _id: 'default-sales', 
                             name: 'Sales',
                             description: 'Sales inquiries and lead qualification',
                             agentCount: Math.floor(Math.random() * 10) + 3,
@@ -380,7 +380,7 @@ router.get('/departments', async (req, res) => {
                             status: 'active'
                         },
                         {
-                            id: 'default-technical',
+                            _id: 'default-technical',
                             name: 'Technical Support',
                             description: 'Technical issues and product support',
                             agentCount: Math.floor(Math.random() * 20) + 8,
@@ -394,7 +394,7 @@ router.get('/departments', async (req, res) => {
                 console.log('⚠️ Department model not available, using default departments');
                 departments = [
                     {
-                        id: 'support',
+                        _id: 'support',
                         name: 'Customer Support',
                         description: 'Handle customer inquiries and support requests',
                         agentCount: 12,
@@ -403,7 +403,7 @@ router.get('/departments', async (req, res) => {
                         status: 'active'
                     },
                     {
-                        id: 'sales', 
+                        _id: 'sales', 
                         name: 'Sales',
                         description: 'Sales inquiries and lead qualification',
                         agentCount: 8,
@@ -412,7 +412,7 @@ router.get('/departments', async (req, res) => {
                         status: 'active'
                     },
                     {
-                        id: 'technical',
+                        _id: 'technical',
                         name: 'Technical Support',
                         description: 'Technical issues and product support',
                         agentCount: 15,

@@ -110,11 +110,11 @@ class OrganizationAdmin {
             }
             console.log('🔍 Session token found:', this.authToken ? 'YES' : 'NO');
             
-            // If no session token, force demo mode
+            // If no session token, show login required
             if (!this.authToken) {
-                console.log('🎭 No authentication found, forcing demo mode...');
-                this.authToken = 'demo-token';
-                this.organization = { name: 'Demo Organization', slug: 'demo', _id: 'demo' };
+                console.log('❌ No authentication found, login required');
+                this.showLoginRequired();
+                return false;
             }
         }
         
@@ -781,56 +781,48 @@ class OrganizationAdmin {
     }
 
     showLoginRequired() {
-        console.log('🔐 No authentication found, loading demo mode...');
+        console.log('🔐 Authentication required for organization admin access');
         
-        // Instead of showing login required, let's show demo mode for testing
-        this.organization = { name: 'Demo Organization', domain: 'demo', _id: 'demo-org' };
-        this.authToken = 'demo-token';
-        
-        // Show demo mode notification
-        this.showSuccess('🎮 Demo Mode Active - All functionality available for testing!');
-        
-        // Initialize UI with demo data
-        this.initializeUI();
-        
-        // Load demo data for all sections
-        this.loadDemoData();
-    }
-    
-    loadDemoData() {
-        console.log('📚 Loading demo data for testing...');
-        
-        // Demo dashboard stats
-        this.updateDashboardStats({
-            stats: {
-                totalUsers: 45,
-                activeAgents: 12,
-                totalChats: 1234,
-                aiInteractions: 890
-            }
-        });
-        
-        // Demo users data
-        this.updateUsersTable({
-            users: [
-                { _id: '1', username: 'john.doe', email: 'john@demo.com', role: 'agent', status: 'online', createdAt: new Date() },
-                { _id: '2', username: 'jane.smith', email: 'jane@demo.com', role: 'admin', status: 'online', createdAt: new Date() },
-                { _id: '3', username: 'bob.wilson', email: 'bob@demo.com', role: 'customer', status: 'offline', createdAt: new Date() },
-                { _id: '4', username: 'alice.johnson', email: 'alice@demo.com', role: 'agent', status: 'busy', createdAt: new Date() }
-            ]
-        });
-        
-        // Demo departments data
-        this.updateDepartmentsTable({
-            departments: [
-                { _id: '1', name: 'Sales', agentCount: 5, status: 'active' },
-                { _id: '2', name: 'Technical Support', agentCount: 8, status: 'active' },
-                { _id: '3', name: 'Billing', agentCount: 3, status: 'active' },
-                { _id: '4', name: 'General', agentCount: 2, status: 'active' }
-            ]
-        });
-        
-        console.log('✅ Demo data loaded successfully');
+        // Show login required message
+        document.body.innerHTML = `
+            <div style="
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            ">
+                <div style="
+                    background: white;
+                    padding: 40px;
+                    border-radius: 15px;
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+                    text-align: center;
+                    max-width: 500px;
+                ">
+                    <h1 style="color: #4a5568; margin-bottom: 20px;">
+                        <i class="fas fa-lock" style="color: #1e88e5;"></i>
+                        Organization Admin Access
+                    </h1>
+                    <p style="color: #666; margin-bottom: 30px; line-height: 1.6;">
+                        You need a valid magic login token to access the organization admin dashboard.
+                        Please contact your global administrator to generate a magic login link.
+                    </p>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <h3 style="color: #4a5568; margin-bottom: 10px;">How to get access:</h3>
+                        <ol style="text-align: left; color: #666;">
+                            <li>Contact your global administrator</li>
+                            <li>Request a magic login link for your organization</li>
+                            <li>Click the provided link to access this dashboard</li>
+                        </ol>
+                    </div>
+                    <p style="color: #999; font-size: 14px;">
+                        For security, direct access without proper authentication is not allowed.
+                    </p>
+                </div>
+            </div>
+        `;
     }
 
     showError(message) {
