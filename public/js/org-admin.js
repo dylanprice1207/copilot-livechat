@@ -943,18 +943,14 @@ class OrganizationAdmin {
                     return;
                 }
                 
-                // Assign each selected user to the department
-                const assignmentPromises = selectedUsers.map(user => 
-                    this.makeAuthenticatedRequest(`/api/admin/departments/${deptId}/assign`, {
-                        method: 'POST',
-                        body: JSON.stringify({ userId: user._id })
-                    })
-                );
+                // Assign all selected users to the department in one request
+                const userIds = selectedUsers.map(user => user._id);
+                const response = await this.makeAuthenticatedRequest(`/api/admin/departments/${deptId}/assign`, {
+                    method: 'POST',
+                    body: JSON.stringify({ userIds })
+                });
                 
-                const results = await Promise.all(assignmentPromises);
-                const successfulAssignments = results.filter(response => response.ok);
-                
-                if (successfulAssignments.length === selectedUsers.length) {
+                if (response.ok) {
                     const assignedNames = selectedUsers.map(user => user.username).join(', ');
                     alert(`✅ Successfully assigned ${selectedUsers.length} agents:\n\n${assignedNames}\n\nThey can now handle customer inquiries for this department.`);
                     this.showSuccess(`Assigned ${selectedUsers.length} agents to department ${deptId}`);
@@ -966,8 +962,9 @@ class OrganizationAdmin {
                         }
                     }, 1000);
                 } else {
-                    const failedCount = selectedUsers.length - successfulAssignments.length;
-                    alert(`⚠️ Partial success: ${successfulAssignments.length} assigned, ${failedCount} failed.\n\nSome assignments may have failed. Please check the console for details.`);
+                    const errorData = await response.json();
+                    alert(`❌ Assignment failed: ${errorData.message || 'Unknown error'}`);
+                    this.showError('Failed to assign agents. Please try again.');
                 }
             }
         } catch (error) {
