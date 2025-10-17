@@ -1078,7 +1078,6 @@ window.saveOrgSettings = async function() {
     } catch (error) {
         window.orgAdmin.showError('Error saving settings: ' + error.message);
     }
-}
 
     // Department Management Methods
     viewDepartmentAgents(deptId) {
