@@ -995,12 +995,12 @@ app.use('/:orgSlug/:route', async (req, res, next) => {
                 
             case 'chat':
                 // Serve organization customer chat
-                res.sendFile(path.join(__dirname, 'public', 'customer.html'));
+                res.sendFile(path.join(__dirname, 'public', 'chatkit-enhanced-demo.html'));
                 break;
                 
             case 'agent':
                 // Serve organization agent dashboard
-                res.sendFile(path.join(__dirname, 'public', 'agent.html'));
+                res.sendFile(path.join(__dirname, 'public', 'agent-departments.html'));
                 break;
                 
             case 'dashboard':
