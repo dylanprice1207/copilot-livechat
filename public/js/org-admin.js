@@ -76,6 +76,7 @@ class OrganizationAdmin {
                     this.authToken = data.token || magicToken;
                     this.organization = data.organization;
                     console.log('✅ Magic login successful for organization:', data.organization?.name);
+                    console.log('✅ Auth token stored:', this.authToken ? 'YES' : 'NO');
                     
                     // Remove magic token from URL for security
                     const url = new URL(window.location);
@@ -671,6 +672,9 @@ class OrganizationAdmin {
     }
     
     async makeAuthenticatedRequest(url, options = {}) {
+        console.log('🌐 Making authenticated request to:', url);
+        console.log('🔑 Auth token available:', this.authToken ? 'YES' : 'NO');
+        
         try {
             const defaultOptions = {
                 headers: {
@@ -682,7 +686,11 @@ class OrganizationAdmin {
                 }
             };
             
+            console.log('📤 Request headers:', defaultOptions.headers);
+            
             const response = await fetch(url, { ...defaultOptions, ...options });
+            
+            console.log('📥 Response status:', response.status);
             
             // If unauthorized, show error instead of demo mode
             if (response.status === 401) {

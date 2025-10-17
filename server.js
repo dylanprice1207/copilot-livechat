@@ -242,6 +242,11 @@ const authenticateToken = async (req, res, next) => {
   const magicToken = req.headers['x-magic-token'] || req.query.magic_token;
   const token = bearerToken || magicToken;
 
+  console.log('🔍 Debug - Auth header:', authHeader);
+  console.log('🔍 Debug - Bearer token:', bearerToken ? 'Present' : 'Missing');
+  console.log('🔍 Debug - Magic token:', magicToken ? 'Present' : 'Missing');
+  console.log('🔍 Debug - Final token:', token ? 'Present' : 'Missing');
+
   if (!token) {
     console.log('❌ No token provided');
     return res.status(401).json({ error: 'Access token required' });
