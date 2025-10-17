@@ -446,15 +446,26 @@ router.get('/users/available', async (req, res) => {
     try {
         const { departmentId } = req.query;
         
-        // Get users that are not already assigned to this department
-        const users = await User.find({
+        let userQuery = {
             role: { $in: ['agent', 'admin'] },
             $or: [
                 { departments: { $ne: departmentId } },
                 { departments: { $exists: false } },
                 { departments: null }
             ]
-        }).select('username email role isOnline departments').sort({ username: 1 });
+        };
+        
+        // If this is an organization admin (magic login), only show users from that organization
+        if (req.user.magicLogin && req.user.organizationId) {
+            console.log('🏢 Filtering users for organization:', req.user.organizationSlug);
+            userQuery.organizationId = req.user.organizationId;
+        }
+        
+        const users = await User.find(userQuery)
+            .select('username email role isOnline departments organizationId')
+            .sort({ username: 1 });
+        
+        console.log(`👥 Found ${users.length} available users for assignment`);
         
         res.json({
             success: true,
@@ -482,11 +493,29 @@ router.post('/departments/:departmentId/assign', async (req, res) => {
             });
         }
         
+        // If this is an organization admin, verify users belong to the same organization
+        let userQuery = { _id: { $in: userIds } };
+        if (req.user.magicLogin && req.user.organizationId) {
+            console.log('🏢 Validating users belong to organization:', req.user.organizationSlug);
+            userQuery.organizationId = req.user.organizationId;
+            
+            // Check if all users belong to this organization
+            const orgUsers = await User.find(userQuery);
+            if (orgUsers.length !== userIds.length) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Cannot assign users from other organizations'
+                });
+            }
+        }
+        
         // Update users to include this department
         const result = await User.updateMany(
-            { _id: { $in: userIds } },
+            userQuery,
             { $addToSet: { departments: departmentId } }
         );
+        
+        console.log(`✅ Assigned ${result.modifiedCount} users to department ${departmentId}`);
         
         // Also update the department with these agents (if Department model exists)
         try {
@@ -518,10 +547,21 @@ router.get('/departments/:departmentId/users', async (req, res) => {
     try {
         const { departmentId } = req.params;
         
+        // Build query for users assigned to this department
+        let userQuery = { departments: departmentId };
+        
+        // If this is an organization admin, only show users from their organization
+        if (req.user.magicLogin && req.user.organizationId) {
+            console.log('🏢 Filtering department users for organization:', req.user.organizationSlug);
+            userQuery.organizationId = req.user.organizationId;
+        }
+        
         // Get users assigned to this department
-        const users = await User.find({
-            departments: departmentId
-        }).select('username email role isOnline createdAt').sort({ username: 1 });
+        const users = await User.find(userQuery)
+            .select('username email role isOnline createdAt')
+            .sort({ username: 1 });
+        
+        console.log(`📋 Found ${users.length} users for department ${departmentId}`);
         
         res.json({
             success: true,
