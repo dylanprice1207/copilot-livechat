@@ -426,6 +426,281 @@
             font-weight: 600;
         }
 
+        /* Subscription Management Styles */
+        .subscription-overview {
+            margin-bottom: 30px;
+        }
+
+        .plan-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .plan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .plan-header h4 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+
+        .plan-price {
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+
+        .plan-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .status-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .plan-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .feature-item {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+
+        .usage-stats {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .usage-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .usage-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #4299e1;
+        }
+
+        .usage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .usage-count {
+            font-weight: bold;
+            color: #4a5568;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4299e1, #667eea);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .available-plans {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .plans-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .plan-option {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .plan-option:hover {
+            border-color: #4299e1;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .plan-option.current {
+            border-color: #38a169;
+            background: #f0fff4;
+        }
+
+        .plan-option.recommended {
+            border-color: #ed8936;
+            background: #fffaf0;
+            position: relative;
+        }
+
+        .plan-option.recommended::before {
+            content: "RECOMMENDED";
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ed8936;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .billing-history {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        .subscription-actions {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: #4299e1;
+        }
+
+        .btn-secondary {
+            background: #718096;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #4299e1;
+            color: #4299e1;
+        }
+
+        .btn-outline:hover {
+            background: #4299e1;
+            color: white;
+        }
+
+        /* Enhanced Analytics Styles */
+        .department-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .department-stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #4299e1;
+        }
+
+        .real-time-dashboard {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 25px;
+            border-radius: 15px;
+            color: white;
+            margin-top: 20px;
+        }
+
+        .dashboard-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .live-metric {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .live-metric h4 {
+            margin: 0 0 10px 0;
+            font-size: 1em;
+            opacity: 0.9;
+        }
+
+        .live-count {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .trend {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .trend.positive {
+            color: #48bb78;
+        }
+
+        .trend.negative {
+            color: #f56565;
+        }
+
+        .export-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            align-items: end;
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
         @media (max-width: 768px) {
             .config-grid {
                 grid-template-columns: 1fr;
@@ -439,6 +714,32 @@
                 flex-direction: column;
                 gap: 20px;
                 text-align: center;
+            }
+
+            .plan-header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+
+            .usage-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .plans-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .subscription-actions {
+                flex-direction: column;
+            }
+
+            .dashboard-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .export-controls {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -471,6 +772,9 @@
         <div class="nav-tabs">
             <button class="nav-tab active" onclick="showTab('dashboard')">
                 <i class="fas fa-chart-line"></i> Dashboard
+            </button>
+            <button class="nav-tab" onclick="showTab('subscription')">
+                <i class="fas fa-credit-card"></i> Subscription
             </button>
             <button class="nav-tab" onclick="showTab('users')">
                 <i class="fas fa-users"></i> User Management
@@ -529,6 +833,115 @@
                         <h4 id="satisfactionRate">0%</h4>
                         <p>Satisfaction Rate</p>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subscription Management Tab -->
+        <div id="subscription" class="tab-content">
+            <div class="section">
+                <h3><i class="fas fa-credit-card"></i> Subscription Management</h3>
+                
+                <!-- Current Plan Overview -->
+                <div class="subscription-overview">
+                    <div class="plan-card">
+                        <div class="plan-header">
+                            <h4 id="currentPlanName">Loading...</h4>
+                            <span class="plan-price" id="currentPlanPrice">$0/month</span>
+                        </div>
+                        <div class="plan-status">
+                            <span class="status-badge" id="planStatus">Active</span>
+                            <small id="planBillingDate">Next billing: Loading...</small>
+                        </div>
+                        <div class="plan-features" id="planFeatures">
+                            <!-- Features will be populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Usage Statistics -->
+                <div class="usage-stats">
+                    <h4><i class="fas fa-chart-bar"></i> Current Usage</h4>
+                    <div class="usage-grid">
+                        <div class="usage-item">
+                            <div class="usage-header">
+                                <span><i class="fas fa-users"></i> Agents</span>
+                                <span class="usage-count" id="agentUsage">0 / 0</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="agentProgress"></div>
+                            </div>
+                        </div>
+                        <div class="usage-item">
+                            <div class="usage-header">
+                                <span><i class="fas fa-database"></i> Knowledge Base</span>
+                                <span class="usage-count" id="kbUsage">0 MB / 0 MB</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="kbProgress"></div>
+                            </div>
+                        </div>
+                        <div class="usage-item">
+                            <div class="usage-header">
+                                <span><i class="fas fa-comments"></i> Conversations (Monthly)</span>
+                                <span class="usage-count" id="conversationUsage">0 / 0</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="conversationProgress"></div>
+                            </div>
+                        </div>
+                        <div class="usage-item">
+                            <div class="usage-header">
+                                <span><i class="fas fa-code"></i> API Calls (Monthly)</span>
+                                <span class="usage-count" id="apiUsage">0 / 0</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="apiProgress"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Available Plans -->
+                <div class="available-plans">
+                    <h4><i class="fas fa-layer-group"></i> Available Plans</h4>
+                    <div class="plans-grid" id="availablePlans">
+                        <!-- Plans will be populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Billing History -->
+                <div class="billing-history">
+                    <h4><i class="fas fa-receipt"></i> Billing History</h4>
+                    <div class="table-container">
+                        <table id="billingTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Plan</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Invoice</th>
+                                </tr>
+                            </thead>
+                            <tbody id="billingTableBody">
+                                <!-- Billing history will be populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Subscription Actions -->
+                <div class="subscription-actions">
+                    <button class="btn btn-primary" onclick="window.orgAdmin.upgradePlan()">
+                        <i class="fas fa-arrow-up"></i> Upgrade Plan
+                    </button>
+                    <button class="btn btn-secondary" onclick="window.orgAdmin.manageBilling()">
+                        <i class="fas fa-credit-card"></i> Manage Billing
+                    </button>
+                    <button class="btn btn-outline" onclick="window.orgAdmin.downloadInvoice()">
+                        <i class="fas fa-download"></i> Download Latest Invoice
+                    </button>
                 </div>
             </div>
         </div>
@@ -794,9 +1207,118 @@
             </div>
 
             <div class="section">
+                <h3><i class="fas fa-clock"></i> Performance Metrics</h3>
+                <div class="stats-grid">
+                    <div class="metric-card">
+                        <h4 id="avgResponseTime">0s</h4>
+                        <p>Avg Response Time</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4 id="avgResolutionTime">0m</h4>
+                        <p>Avg Resolution Time</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4 id="customerSatisfaction">0%</h4>
+                        <p>Customer Satisfaction</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4 id="firstContactResolution">0%</h4>
+                        <p>First Contact Resolution</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
                 <h3><i class="fas fa-chart-pie"></i> Department Performance</h3>
-                <div id="departmentStats">
+                <div id="departmentStats" class="department-stats-grid">
                     <!-- Department statistics will be loaded here -->
+                </div>
+            </div>
+
+            <div class="section">
+                <h3><i class="fas fa-robot"></i> AI Performance</h3>
+                <div class="stats-grid">
+                    <div class="metric-card">
+                        <h4 id="aiChatsHandled">0</h4>
+                        <p>AI Chats Handled</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4 id="aiAccuracyRate">0%</h4>
+                        <p>AI Accuracy Rate</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4 id="aiHandoffRate">0%</h4>
+                        <p>Human Handoff Rate</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4 id="aiResponseTime">0s</h4>
+                        <p>AI Response Time</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3><i class="fas fa-chart-area"></i> Real-time Dashboard</h3>
+                <div class="real-time-dashboard">
+                    <div class="dashboard-row">
+                        <div class="live-metric">
+                            <h4>Live Chats</h4>
+                            <div class="live-count" id="liveChatsCount">0</div>
+                            <div class="trend" id="liveChatsTrend">+0</div>
+                        </div>
+                        <div class="live-metric">
+                            <h4>Queue Length</h4>
+                            <div class="live-count" id="queueLength">0</div>
+                            <div class="trend" id="queueTrend">+0</div>
+                        </div>
+                        <div class="live-metric">
+                            <h4>Online Agents</h4>
+                            <div class="live-count" id="onlineAgentsCount">0</div>
+                            <div class="trend" id="agentsTrend">+0</div>
+                        </div>
+                        <div class="live-metric">
+                            <h4>Avg Wait Time</h4>
+                            <div class="live-count" id="avgWaitTime">0s</div>
+                            <div class="trend" id="waitTimeTrend">+0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3><i class="fas fa-download"></i> Export Reports</h3>
+                <div class="export-controls">
+                    <div class="form-group">
+                        <label for="reportType">Report Type</label>
+                        <select id="reportType">
+                            <option value="chat-analytics">Chat Analytics</option>
+                            <option value="agent-performance">Agent Performance</option>
+                            <option value="customer-satisfaction">Customer Satisfaction</option>
+                            <option value="ai-performance">AI Performance</option>
+                            <option value="department-stats">Department Statistics</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="reportPeriod">Time Period</label>
+                        <select id="reportPeriod">
+                            <option value="today">Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
+                            <option value="quarter">This Quarter</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="reportFormat">Format</label>
+                        <select id="reportFormat">
+                            <option value="csv">CSV</option>
+                            <option value="excel">Excel</option>
+                            <option value="pdf">PDF</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="window.orgAdmin.exportReport()">
+                        <i class="fas fa-download"></i> Export Report
+                    </button>
                 </div>
             </div>
         </div>

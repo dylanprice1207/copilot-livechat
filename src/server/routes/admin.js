@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const AnalyticsService = require('../services/AnalyticsService');
+const { checkAgentLimit, updateUsage } = require('../middleware/subscriptionLimits');
 
 /**
  * Get all users (admin only)
@@ -37,7 +38,7 @@ router.get('/users', async (req, res) => {
 /**
  * Create new user (admin only)
  */
-router.post('/users', async (req, res) => {
+router.post('/users', checkAgentLimit, async (req, res) => {
     try {
         const { username, email, password, role, departments } = req.body;
         
@@ -74,6 +75,11 @@ router.post('/users', async (req, res) => {
             createdAt: new Date()
         };
         
+        // Add organization context if available
+        if (req.user && req.user.organizationId) {
+            userData.organizationId = req.user.organizationId;
+        }
+        
         // Set default departments for admins
         if (userData.role === 'admin') {
             userData.departments = ['general', 'sales', 'technical', 'support', 'billing'];
@@ -82,8 +88,14 @@ router.post('/users', async (req, res) => {
         const user = new User(userData);
         await user.save();
         
+        // Update usage for agent/admin users
+        if ((userData.role === 'agent' || userData.role === 'admin') && req.user && req.user.organizationId) {
+            await updateUsage(req.user.organizationId, 'agent');
+        }
+        
         // Remove password from response
         const userResponse = user.toObject();
+        delete userResponse.password;
         delete userResponse.password;
         
         res.status(201).json({

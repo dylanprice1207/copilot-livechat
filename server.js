@@ -347,6 +347,7 @@ app.get('/', (req, res) => {
         endpoints: {
             health: '/health',
             api: '/api',
+            pricing: '/pricing.html',
             chatDemo: '/chatkit-enhanced-demo.html',
             agentDashboard: '/agent.html'
         }
@@ -813,6 +814,89 @@ app.use('/api/global-admin', authenticateToken, globalAdminRoutes);
 // Organization Routes
 const organizationRoutes = require('./src/server/routes/organization');
 app.use('/api/organization', organizationRoutes);
+
+// Subscription Routes
+const { router: subscriptionRoutes } = require('./src/server/routes/subscription');
+app.use('/api/subscription', authenticateToken, subscriptionRoutes);
+
+// Public subscription plans endpoint
+app.get('/api/plans', async (req, res) => {
+    try {
+        const plans = [
+            {
+                name: 'starter',
+                displayName: 'Starter',
+                price: 29,
+                currency: 'USD',
+                billingCycle: 'monthly',
+                maxAgents: 2,
+                knowledgeBaseSize: 100,
+                monthlyConversations: 500,
+                features: [
+                    'Up to 2 agents',
+                    '100MB knowledge base',
+                    '500 monthly conversations',
+                    'Basic analytics',
+                    'Email support',
+                    'Standard integrations'
+                ]
+            },
+            {
+                name: 'professional',
+                displayName: 'Professional',
+                price: 79,
+                currency: 'USD',
+                billingCycle: 'monthly',
+                popular: true,
+                maxAgents: 10,
+                knowledgeBaseSize: 1024,
+                monthlyConversations: 2500,
+                features: [
+                    'Up to 10 agents',
+                    '1GB knowledge base',
+                    '2,500 monthly conversations',
+                    'Advanced analytics & reports',
+                    'Priority support',
+                    'All integrations',
+                    'Custom branding',
+                    'Department management'
+                ]
+            },
+            {
+                name: 'business',
+                displayName: 'Business',
+                price: 149,
+                currency: 'USD',
+                billingCycle: 'monthly',
+                maxAgents: 25,
+                knowledgeBaseSize: 5120,
+                monthlyConversations: 10000,
+                features: [
+                    'Up to 25 agents',
+                    '5GB knowledge base',
+                    '10,000 monthly conversations',
+                    'Real-time analytics',
+                    '24/7 phone support',
+                    'API access',
+                    'Advanced AI features',
+                    'Role-based permissions',
+                    'Data export'
+                ]
+            }
+        ];
+
+        res.json({
+            success: true,
+            plans
+        });
+    } catch (error) {
+        console.error('Error getting public plans:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error retrieving plans' 
+        });
+    }
+});
 
 // Handle magic login for organization admin portal
 async function handleOrgAdminMagicLogin(req, res, organization) {

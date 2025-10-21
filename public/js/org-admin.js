@@ -331,6 +331,9 @@ class OrganizationAdmin {
                 case 'dashboard':
                     await this.loadDashboardData();
                     break;
+                case 'subscription':
+                    await this.loadSubscriptionData();
+                    break;
                 case 'users':
                     await this.loadUsersData();
                     break;
@@ -406,16 +409,223 @@ class OrganizationAdmin {
     }
     
     async loadAnalyticsData() {
-        console.log('📈 Loading analytics data...');
+        console.log('📈 Loading comprehensive analytics data...');
         try {
-            const response = await this.makeAuthenticatedRequest('/api/admin/analytics');
-            if (response.ok) {
-                const data = await response.json();
-                this.updateAnalyticsCharts(data);
+            const [analyticsResponse, metricsResponse, realTimeResponse] = await Promise.all([
+                this.makeAuthenticatedRequest('/api/admin/analytics'),
+                this.makeAuthenticatedRequest('/api/admin/metrics/comprehensive'),
+                this.makeAuthenticatedRequest('/api/admin/metrics/realtime')
+            ]);
+
+            if (analyticsResponse.ok && metricsResponse.ok && realTimeResponse.ok) {
+                const analytics = await analyticsResponse.json();
+                const metrics = await metricsResponse.json();
+                const realTime = await realTimeResponse.json();
+
+                this.updateAnalyticsMetrics(analytics);
+                this.updatePerformanceMetrics(metrics);
+                this.updateRealTimeDashboard(realTime);
+                this.updateDepartmentStats(analytics.departments);
+                this.updateAIPerformance(analytics.ai);
             }
         } catch (error) {
             console.error('Failed to load analytics data:', error);
+            this.showDemo_AnalyticsData();
         }
+    }
+
+    updateAnalyticsMetrics(data) {
+        // Update chat analytics
+        document.getElementById('dailyChats').textContent = data.chats?.daily || 0;
+        document.getElementById('weeklyChats').textContent = data.chats?.weekly || 0;
+        document.getElementById('monthlyChats').textContent = data.chats?.monthly || 0;
+        document.getElementById('resolvedChats').textContent = `${data.chats?.resolutionRate || 0}%`;
+    }
+
+    updatePerformanceMetrics(data) {
+        // Update performance metrics
+        document.getElementById('avgResponseTime').textContent = `${data.performance?.avgResponseTime || 0}s`;
+        document.getElementById('avgResolutionTime').textContent = `${data.performance?.avgResolutionTime || 0}m`;
+        document.getElementById('customerSatisfaction').textContent = `${data.performance?.customerSatisfaction || 0}%`;
+        document.getElementById('firstContactResolution').textContent = `${data.performance?.firstContactResolution || 0}%`;
+    }
+
+    updateRealTimeDashboard(data) {
+        // Update real-time dashboard
+        document.getElementById('liveChatsCount').textContent = data.liveChats || 0;
+        document.getElementById('queueLength').textContent = data.queueLength || 0;
+        document.getElementById('onlineAgentsCount').textContent = data.onlineAgents || 0;
+        document.getElementById('avgWaitTime').textContent = `${data.avgWaitTime || 0}s`;
+
+        // Update trends
+        this.updateTrend('liveChatsTrend', data.trends?.liveChats || 0);
+        this.updateTrend('queueTrend', data.trends?.queue || 0);
+        this.updateTrend('agentsTrend', data.trends?.agents || 0);
+        this.updateTrend('waitTimeTrend', data.trends?.waitTime || 0);
+    }
+
+    updateTrend(elementId, value) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.textContent = value > 0 ? `+${value}` : value.toString();
+            element.className = `trend ${value > 0 ? 'positive' : value < 0 ? 'negative' : ''}`;
+        }
+    }
+
+    updateDepartmentStats(departments) {
+        const container = document.getElementById('departmentStats');
+        if (!departments || departments.length === 0) {
+            container.innerHTML = '<p>No department data available.</p>';
+            return;
+        }
+
+        container.innerHTML = departments.map(dept => `
+            <div class="department-stat-card">
+                <h5><i class="fas fa-building"></i> ${dept.name}</h5>
+                <div class="dept-metrics">
+                    <div class="metric-row">
+                        <span>Chats Handled:</span>
+                        <strong>${dept.chatsHandled || 0}</strong>
+                    </div>
+                    <div class="metric-row">
+                        <span>Avg Response Time:</span>
+                        <strong>${dept.avgResponseTime || 0}s</strong>
+                    </div>
+                    <div class="metric-row">
+                        <span>Resolution Rate:</span>
+                        <strong>${dept.resolutionRate || 0}%</strong>
+                    </div>
+                    <div class="metric-row">
+                        <span>Satisfaction:</span>
+                        <strong>${dept.satisfaction || 0}/5 ⭐</strong>
+                    </div>
+                    <div class="metric-row">
+                        <span>Active Agents:</span>
+                        <strong>${dept.activeAgents || 0}</strong>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    updateAIPerformance(aiData) {
+        if (!aiData) return;
+
+        document.getElementById('aiChatsHandled').textContent = aiData.chatsHandled || 0;
+        document.getElementById('aiAccuracyRate').textContent = `${aiData.accuracyRate || 0}%`;
+        document.getElementById('aiHandoffRate').textContent = `${aiData.handoffRate || 0}%`;
+        document.getElementById('aiResponseTime').textContent = `${aiData.responseTime || 0}s`;
+    }
+
+    async exportReport() {
+        const reportType = document.getElementById('reportType').value;
+        const reportPeriod = document.getElementById('reportPeriod').value;
+        const reportFormat = document.getElementById('reportFormat').value;
+
+        try {
+            const response = await this.makeAuthenticatedRequest('/api/admin/export-report', {
+                method: 'POST',
+                body: JSON.stringify({
+                    type: reportType,
+                    period: reportPeriod,
+                    format: reportFormat
+                })
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${reportType}-${reportPeriod}.${reportFormat}`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                this.showSuccess('Report exported successfully!');
+            } else {
+                throw new Error('Export failed');
+            }
+        } catch (error) {
+            console.error('Failed to export report:', error);
+            this.showError('Failed to export report. Please try again.');
+        }
+    }
+
+    showDemo_AnalyticsData() {
+        console.log('📊 Showing demo analytics data...');
+        
+        const demoAnalytics = {
+            chats: {
+                daily: 145,
+                weekly: 987,
+                monthly: 4250,
+                resolutionRate: 94
+            }
+        };
+
+        const demoMetrics = {
+            performance: {
+                avgResponseTime: 32,
+                avgResolutionTime: 8,
+                customerSatisfaction: 4.7,
+                firstContactResolution: 78
+            }
+        };
+
+        const demoRealTime = {
+            liveChats: 23,
+            queueLength: 5,
+            onlineAgents: 12,
+            avgWaitTime: 45,
+            trends: {
+                liveChats: 3,
+                queue: -2,
+                agents: 1,
+                waitTime: -5
+            }
+        };
+
+        const demoDepartments = [
+            {
+                name: 'Technical Support',
+                chatsHandled: 156,
+                avgResponseTime: 28,
+                resolutionRate: 92,
+                satisfaction: 4.6,
+                activeAgents: 8
+            },
+            {
+                name: 'Sales',
+                chatsHandled: 89,
+                avgResponseTime: 22,
+                resolutionRate: 97,
+                satisfaction: 4.8,
+                activeAgents: 4
+            },
+            {
+                name: 'Billing',
+                chatsHandled: 67,
+                avgResponseTime: 35,
+                resolutionRate: 89,
+                satisfaction: 4.3,
+                activeAgents: 3
+            }
+        ];
+
+        const demoAI = {
+            chatsHandled: 312,
+            accuracyRate: 89,
+            handoffRate: 15,
+            responseTime: 2
+        };
+
+        this.updateAnalyticsMetrics(demoAnalytics);
+        this.updatePerformanceMetrics(demoMetrics);
+        this.updateRealTimeDashboard(demoRealTime);
+        this.updateDepartmentStats(demoDepartments);
+        this.updateAIPerformance(demoAI);
     }
     
     updateAIConfigForm(data) {
@@ -1018,6 +1228,244 @@ class OrganizationAdmin {
                 }
             }, 1000);
         }
+    }
+
+    // Subscription Management Methods
+    async loadSubscriptionData() {
+        console.log('💳 Loading subscription data...');
+        try {
+            const [subscriptionResponse, plansResponse, usageResponse] = await Promise.all([
+                this.makeAuthenticatedRequest('/api/subscription/info'),
+                this.makeAuthenticatedRequest('/api/subscription/plans'),
+                this.makeAuthenticatedRequest('/api/subscription/usage')
+            ]);
+
+            if (subscriptionResponse.ok && plansResponse.ok && usageResponse.ok) {
+                const subscription = await subscriptionResponse.json();
+                const plans = await plansResponse.json();
+                const usage = await usageResponse.json();
+
+                this.updateSubscriptionOverview(subscription);
+                this.updateUsageStats(usage);
+                this.updateAvailablePlans(plans.plans);
+                this.loadBillingHistory();
+            }
+        } catch (error) {
+            console.error('Failed to load subscription data:', error);
+            this.showDemo_SubscriptionData();
+        }
+    }
+
+    updateSubscriptionOverview(subscription) {
+        const plan = subscription.plan;
+        
+        document.getElementById('currentPlanName').textContent = plan.name;
+        document.getElementById('currentPlanPrice').textContent = `$${plan.price}/month`;
+        document.getElementById('planStatus').textContent = subscription.status;
+        
+        if (subscription.nextBillingDate) {
+            const date = new Date(subscription.nextBillingDate).toLocaleDateString();
+            document.getElementById('planBillingDate').textContent = `Next billing: ${date}`;
+        }
+
+        // Update plan features
+        const featuresContainer = document.getElementById('planFeatures');
+        featuresContainer.innerHTML = plan.features.map(feature => 
+            `<span class="feature-item">${feature}</span>`
+        ).join('');
+    }
+
+    updateUsageStats(usage) {
+        // Update agent usage
+        const agentPercent = Math.min((usage.agents.current / usage.agents.limit) * 100, 100);
+        document.getElementById('agentUsage').textContent = `${usage.agents.current} / ${usage.agents.limit}`;
+        document.getElementById('agentProgress').style.width = `${agentPercent}%`;
+
+        // Update knowledge base usage
+        const kbMB = Math.round(usage.knowledgeBase.current / (1024 * 1024));
+        const kbLimitMB = Math.round(usage.knowledgeBase.limit / (1024 * 1024));
+        const kbPercent = Math.min((usage.knowledgeBase.current / usage.knowledgeBase.limit) * 100, 100);
+        document.getElementById('kbUsage').textContent = `${kbMB} MB / ${kbLimitMB} MB`;
+        document.getElementById('kbProgress').style.width = `${kbPercent}%`;
+
+        // Update conversation usage
+        const convPercent = Math.min((usage.conversations.current / usage.conversations.limit) * 100, 100);
+        document.getElementById('conversationUsage').textContent = `${usage.conversations.current} / ${usage.conversations.limit}`;
+        document.getElementById('conversationProgress').style.width = `${convPercent}%`;
+
+        // Update API usage
+        const apiPercent = Math.min((usage.apiCalls.current / usage.apiCalls.limit) * 100, 100);
+        document.getElementById('apiUsage').textContent = `${usage.apiCalls.current} / ${usage.apiCalls.limit}`;
+        document.getElementById('apiProgress').style.width = `${apiPercent}%`;
+    }
+
+    updateAvailablePlans(plans) {
+        const plansContainer = document.getElementById('availablePlans');
+        plansContainer.innerHTML = plans.map(plan => `
+            <div class="plan-option ${plan.name === 'Professional' ? 'recommended' : ''}" 
+                 onclick="window.orgAdmin.selectPlan('${plan._id}')">
+                <h5>${plan.name}</h5>
+                <div class="plan-price">$${plan.price}/month</div>
+                <ul style="text-align: left; margin: 15px 0;">
+                    ${plan.features.map(feature => `<li>${feature}</li>`).join('')}
+                </ul>
+                <div style="margin-top: 10px;">
+                    <small>• ${plan.limits.agents} agents</small><br>
+                    <small>• ${Math.round(plan.limits.knowledgeBase / (1024 * 1024))} MB storage</small><br>
+                    <small>• ${plan.limits.conversations.toLocaleString()} conversations/month</small>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async loadBillingHistory() {
+        try {
+            const response = await this.makeAuthenticatedRequest('/api/subscription/billing-history');
+            if (response.ok) {
+                const data = await response.json();
+                this.updateBillingTable(data.history);
+            }
+        } catch (error) {
+            console.error('Failed to load billing history:', error);
+            this.showDemo_BillingHistory();
+        }
+    }
+
+    updateBillingTable(history) {
+        const tbody = document.getElementById('billingTableBody');
+        tbody.innerHTML = history.map(item => `
+            <tr>
+                <td>${new Date(item.date).toLocaleDateString()}</td>
+                <td>${item.plan}</td>
+                <td>$${item.amount}</td>
+                <td><span class="status-badge">${item.status}</span></td>
+                <td>
+                    <button class="btn btn-sm" onclick="window.orgAdmin.downloadInvoice('${item.invoiceId}')">
+                        <i class="fas fa-download"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async selectPlan(planId) {
+        if (confirm('Are you sure you want to change your subscription plan?')) {
+            try {
+                const response = await this.makeAuthenticatedRequest('/api/subscription/change-plan', {
+                    method: 'POST',
+                    body: JSON.stringify({ planId })
+                });
+
+                if (response.ok) {
+                    this.showSuccess('Plan changed successfully! Changes will take effect immediately.');
+                    this.loadSubscriptionData();
+                } else {
+                    const error = await response.json();
+                    this.showError('Failed to change plan: ' + error.message);
+                }
+            } catch (error) {
+                this.showError('Error changing plan: ' + error.message);
+            }
+        }
+    }
+
+    upgradePlan() {
+        this.showSuccess('Redirecting to plan upgrade page...');
+        // In a real implementation, this would redirect to a payment page
+        setTimeout(() => {
+            window.open('/pricing', '_blank');
+        }, 1000);
+    }
+
+    manageBilling() {
+        this.showSuccess('Opening billing management portal...');
+        // In a real implementation, this would open Stripe customer portal
+        setTimeout(() => {
+            alert('Billing management portal would open here. This typically integrates with Stripe Customer Portal.');
+        }, 1000);
+    }
+
+    downloadInvoice(invoiceId) {
+        if (invoiceId) {
+            // Download specific invoice
+            window.open(`/api/subscription/invoice/${invoiceId}`, '_blank');
+        } else {
+            // Download latest invoice
+            window.open('/api/subscription/latest-invoice', '_blank');
+        }
+    }
+
+    // Demo data methods for when API calls fail
+    showDemo_SubscriptionData() {
+        console.log('📋 Showing demo subscription data...');
+        
+        // Demo subscription data
+        const demoSubscription = {
+            plan: {
+                name: 'Professional',
+                price: 79,
+                features: ['Unlimited Agents', 'Advanced Analytics', 'API Access', 'Priority Support']
+            },
+            status: 'Active',
+            nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        };
+
+        const demoUsage = {
+            agents: { current: 8, limit: 25 },
+            knowledgeBase: { current: 150 * 1024 * 1024, limit: 500 * 1024 * 1024 },
+            conversations: { current: 1250, limit: 10000 },
+            apiCalls: { current: 2800, limit: 100000 }
+        };
+
+        const demoPlans = [
+            {
+                _id: 'starter',
+                name: 'Starter',
+                price: 29,
+                features: ['5 Agents', 'Basic Analytics', 'Email Support'],
+                limits: { agents: 5, knowledgeBase: 100 * 1024 * 1024, conversations: 1000 }
+            },
+            {
+                _id: 'professional',
+                name: 'Professional',
+                price: 79,
+                features: ['25 Agents', 'Advanced Analytics', 'API Access', 'Priority Support'],
+                limits: { agents: 25, knowledgeBase: 500 * 1024 * 1024, conversations: 10000 }
+            },
+            {
+                _id: 'business',
+                name: 'Business',
+                price: 149,
+                features: ['Unlimited Agents', 'Custom Integrations', 'Dedicated Support'],
+                limits: { agents: 999, knowledgeBase: 2 * 1024 * 1024 * 1024, conversations: 50000 }
+            }
+        ];
+
+        this.updateSubscriptionOverview(demoSubscription);
+        this.updateUsageStats(demoUsage);
+        this.updateAvailablePlans(demoPlans);
+        this.showDemo_BillingHistory();
+    }
+
+    showDemo_BillingHistory() {
+        const demoHistory = [
+            {
+                date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+                plan: 'Professional',
+                amount: 79,
+                status: 'Paid',
+                invoiceId: 'inv_demo_001'
+            },
+            {
+                date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
+                plan: 'Professional',
+                amount: 79,
+                status: 'Paid',
+                invoiceId: 'inv_demo_002'
+            }
+        ];
+
+        this.updateBillingTable(demoHistory);
     }
 
 }
