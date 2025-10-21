@@ -901,10 +901,13 @@ app.get('/api/plans', async (req, res) => {
 // Handle magic login for organization admin portal
 async function handleOrgAdminMagicLogin(req, res, organization) {
     const magicToken = req.query.magic_token;
+    const authToken = req.query.token;
     let authStatus = 'unauthenticated';
     let authData = null;
     let errorMessage = null;
+    let isAuthenticated = false;
     
+    // Check for magic token first
     if (magicToken) {
         console.log('🪄 Processing magic token for organization admin portal...');
         
@@ -928,10 +931,10 @@ async function handleOrgAdminMagicLogin(req, res, organization) {
                 throw new Error('Magic token is for a different organization');
             }
             
-            // Skip global admin validation due to User model issues, but log it
             console.log(`✅ Magic token verified for ${decoded.globalAdminUsername} → ${organization.name}`);
             
             authStatus = 'authenticated';
+            isAuthenticated = true;
             authData = {
                 organizationId: decoded.organizationId,
                 organizationName: organization.name,
@@ -948,6 +951,45 @@ async function handleOrgAdminMagicLogin(req, res, organization) {
         }
     }
     
+    // Check for regular auth token
+    if (!isAuthenticated && authToken) {
+        try {
+            const decoded = jwt.verify(authToken, process.env.JWT_SECRET || 'your-secret-key-change-in-production');
+            
+            // Check if token is for this organization and has admin role
+            if (decoded.organizationSlug === organization.slug && 
+                (decoded.role === 'admin' || decoded.role === 'super_admin' || decoded.role === 'global_admin')) {
+                
+                console.log(`✅ Auth token verified for admin access to ${organization.name}`);
+                authStatus = 'authenticated';
+                isAuthenticated = true;
+                authData = {
+                    organizationId: organization._id.toString(),
+                    organizationName: organization.name,
+                    organizationSlug: organization.slug,
+                    userId: decoded.userId,
+                    username: decoded.username,
+                    role: decoded.role
+                };
+            } else {
+                throw new Error('Invalid token for this organization or insufficient permissions');
+            }
+            
+        } catch (error) {
+            console.error('❌ Auth token verification failed:', error.message);
+            // Don't set error status here, just continue to login page
+        }
+    }
+    
+    // If not authenticated, serve the login page
+    if (!isAuthenticated) {
+        console.log(`🔐 Serving login page for ${organization.name} admin portal`);
+        return res.sendFile(path.join(__dirname, 'public', 'org-admin-login.html'));
+    }
+    
+    // If authenticated, serve the admin portal with auth data injected
+    console.log(`✅ Serving authenticated admin portal for ${organization.name}`);
+    
     // Read the HTML file and inject authentication data
     const fs = require('fs');
     const htmlPath = path.join(__dirname, 'public', 'org-admin.html');
@@ -956,17 +998,17 @@ async function handleOrgAdminMagicLogin(req, res, organization) {
     // Inject authentication data as a script tag before the existing scripts
     const authDataScript = `
     <script>
-        // Magic Login Authentication Data (injected server-side)
+        // Authentication Data (injected server-side)
         window.magicLoginAuth = {
             status: '${authStatus}',
             data: ${authData ? JSON.stringify(authData) : 'null'},
             error: ${errorMessage ? `'${errorMessage}'` : 'null'}
         };
-        console.log('🔍 Magic Login Auth Data:', window.magicLoginAuth);
+        console.log('🔍 Auth Data:', window.magicLoginAuth);
         
         // Show authentication status immediately
         if (window.magicLoginAuth.status === 'authenticated') {
-            console.log('✅ Magic login successful for:', window.magicLoginAuth.data.organizationName);
+            console.log('✅ Login successful for:', window.magicLoginAuth.data.organizationName);
             
             // Update page title
             document.title = window.magicLoginAuth.data.organizationName + ' - Admin Portal';
@@ -976,8 +1018,8 @@ async function handleOrgAdminMagicLogin(req, res, organization) {
             banner.innerHTML = \`
                 <div style="position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(90deg, #10b981, #059669); color: white; padding: 12px; text-align: center; z-index: 10000; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                     <i class="fas fa-shield-alt"></i>
-                    <strong>Magic Login Successful</strong> - Welcome to \${window.magicLoginAuth.data.organizationName} Admin Portal
-                    <small style="opacity: 0.8; margin-left: 10px;">Authenticated as Global Admin</small>
+                    <strong>Welcome to \${window.magicLoginAuth.data.organizationName} Admin Portal</strong>
+                    <small style="opacity: 0.8; margin-left: 10px;">Authenticated as \${window.magicLoginAuth.data.role || 'Admin'}</small>
                 </div>
             \`;
             document.body.appendChild(banner);
@@ -985,7 +1027,7 @@ async function handleOrgAdminMagicLogin(req, res, organization) {
             // Add margin to body to account for banner
             document.body.style.marginTop = '50px';
             
-            // Auto-hide banner after 8 seconds
+            // Auto-hide banner after 6 seconds
             setTimeout(() => {
                 banner.style.transform = 'translateY(-100%)';
                 banner.style.transition = 'transform 0.3s ease';
@@ -995,37 +1037,7 @@ async function handleOrgAdminMagicLogin(req, res, organization) {
                         document.body.style.marginTop = '';
                     }
                 }, 300);
-            }, 8000);
-            
-        } else if (window.magicLoginAuth.status === 'error') {
-            console.error('❌ Magic login failed:', window.magicLoginAuth.error);
-            
-            // Show error banner
-            const banner = document.createElement('div');
-            banner.innerHTML = \`
-                <div style="position: fixed; top: 0; left: 0; right: 0; background: #ef4444; color: white; padding: 12px; text-align: center; z-index: 10000; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <strong>Magic Login Failed</strong> - \${window.magicLoginAuth.error}
-                </div>
-            \`;
-            document.body.appendChild(banner);
-            document.body.style.marginTop = '50px';
-            
-        } else {
-            console.log('🔍 No magic token provided - manual authentication required');
-            
-            // Show authentication required message
-            const authRequired = document.createElement('div');
-            authRequired.innerHTML = \`
-                <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); text-align: center; max-width: 500px; z-index: 10000;">
-                    <h2 style="margin-bottom: 20px; color: #4a5568;"><i class="fas fa-lock"></i> Authentication Required</h2>
-                    <p style="margin-bottom: 15px; color: #718096; line-height: 1.6;">You need to be authenticated to access this organization's admin portal.</p>
-                    <p style="margin-bottom: 20px; color: #718096; line-height: 1.6;">Please use a magic login link from the global admin panel.</p>
-                    <button onclick="window.close()" style="background: #6b7280; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px;">Close</button>
-                </div>
-                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999;"></div>
-            \`;
-            document.body.appendChild(authRequired);
+            }, 6000);
         }
     </script>`;
     
