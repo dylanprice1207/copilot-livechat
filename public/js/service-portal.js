@@ -54,7 +54,7 @@ class ServicePortal {
     }
 
     redirectToLogin() {
-        window.location.href = '/admin-login?portal=service';
+        window.location.href = '/service-portal';
     }
 
     setupEventListeners() {

@@ -838,7 +838,13 @@ const servicePortalRoutes = require('./src/server/routes/service-portal');
 app.use('/api/service-portal', authenticateToken, servicePortalRoutes);
 
 // Serve service portal HTML
-app.get('/service-portal', authenticateToken, (req, res) => {
+app.get('/service-portal', (req, res) => {
+    // Redirect to login page if not authenticated
+    res.sendFile(path.join(__dirname, 'public', 'service-portal-login.html'));
+});
+
+// Serve authenticated service portal dashboard
+app.get('/service-portal-dashboard', authenticateToken, (req, res) => {
     if (req.user.role !== 'service_agent' && req.user.role !== 'global_admin') {
         return res.status(403).json({ error: 'Access denied. Service agent role required.' });
     }
