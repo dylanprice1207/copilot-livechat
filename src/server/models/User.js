@@ -4,7 +4,7 @@ const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, enum: ['customer', 'agent', 'admin', 'global_admin', 'guest'], default: 'customer' },
+  role: { type: String, enum: ['customer', 'agent', 'admin', 'global_admin', 'service_agent', 'guest'], default: 'customer' },
   
   // Organization and department management
   organizationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization', default: null },

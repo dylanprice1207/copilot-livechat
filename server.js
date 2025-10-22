@@ -556,7 +556,8 @@ app.post('/api/admin-login', async (req, res) => {
     const allowedRoles = {
       'agent': ['agent', 'admin', 'super_admin', 'global_admin'],
       'admin': ['admin', 'super_admin', 'global_admin'],
-      'org-admin': ['admin', 'super_admin', 'global_admin']
+      'org-admin': ['admin', 'super_admin', 'global_admin'],
+      'service': ['service_agent', 'global_admin']
     };
 
     if (!allowedRoles[role] || !allowedRoles[role].includes(user.role)) {
@@ -831,6 +832,18 @@ app.use('/api/subscription', authenticateToken, subscriptionRoutes);
 // Branding Routes
 const brandingRoutes = require('./src/server/routes/branding');
 app.use('/api/branding', brandingRoutes);
+
+// Service Portal Routes
+const servicePortalRoutes = require('./src/server/routes/service-portal');
+app.use('/api/service-portal', authenticateToken, servicePortalRoutes);
+
+// Serve service portal HTML
+app.get('/service-portal', authenticateToken, (req, res) => {
+    if (req.user.role !== 'service_agent' && req.user.role !== 'global_admin') {
+        return res.status(403).json({ error: 'Access denied. Service agent role required.' });
+    }
+    res.sendFile(path.join(__dirname, 'public', 'service-portal.html'));
+});
 
 // Public subscription plans endpoint
 app.get('/api/plans', async (req, res) => {
