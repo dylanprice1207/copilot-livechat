@@ -844,10 +844,8 @@ app.get('/service-portal', (req, res) => {
 });
 
 // Serve authenticated service portal dashboard
-app.get('/service-portal-dashboard', authenticateToken, (req, res) => {
-    if (req.user.role !== 'service_agent' && req.user.role !== 'global_admin') {
-        return res.status(403).json({ error: 'Access denied. Service agent role required.' });
-    }
+app.get('/service-portal-dashboard', (req, res) => {
+    // Always serve the dashboard HTML, let the frontend handle authentication
     res.sendFile(path.join(__dirname, 'public', 'service-portal.html'));
 });
 

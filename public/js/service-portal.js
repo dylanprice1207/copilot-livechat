@@ -18,8 +18,14 @@ class ServicePortal {
     async init() {
         console.log('🚀 Initializing Service Portal...');
         
+        // Show loading overlay
+        this.showAuthLoading();
+        
         // Check authentication
         await this.checkAuth();
+        
+        // Hide loading overlay
+        this.hideAuthLoading();
         
         // Load initial data
         await this.loadDashboard();
@@ -34,13 +40,17 @@ class ServicePortal {
         try {
             const token = localStorage.getItem('servicePortalToken');
             if (!token) {
-                this.redirectToLogin();
+                console.log('❌ No authentication token found');
+                this.showAuthError('Authentication Required', 'Please login to access the service portal.');
+                setTimeout(() => this.redirectToLogin(), 2000);
                 return;
             }
 
             const response = await this.makeRequest('/auth/verify', 'GET');
             if (!response.success) {
-                this.redirectToLogin();
+                console.log('❌ Authentication verification failed');
+                this.showAuthError('Invalid Session', 'Your session has expired. Redirecting to login...');
+                setTimeout(() => this.redirectToLogin(), 2000);
                 return;
             }
 
@@ -49,12 +59,45 @@ class ServicePortal {
             
         } catch (error) {
             console.error('❌ Auth check failed:', error);
-            this.redirectToLogin();
+            this.showAuthError('Authentication Error', 'Unable to verify authentication. Redirecting to login...');
+            setTimeout(() => this.redirectToLogin(), 2000);
         }
     }
 
     redirectToLogin() {
         window.location.href = '/service-portal';
+    }
+
+    showAuthLoading() {
+        const loadingElement = document.getElementById('authLoading');
+        if (loadingElement) {
+            loadingElement.classList.remove('hidden');
+        }
+    }
+
+    hideAuthLoading() {
+        const loadingElement = document.getElementById('authLoading');
+        if (loadingElement) {
+            loadingElement.classList.add('hidden');
+        }
+    }
+
+    showAuthError(title, message) {
+        const loadingElement = document.getElementById('authLoading');
+        if (loadingElement) {
+            loadingElement.innerHTML = `
+                <div class="loading-content">
+                    <div style="font-size: 48px; margin-bottom: 20px;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h3>${title}</h3>
+                    <p>${message}</p>
+                    <div style="margin-top: 20px;">
+                        <i class="fas fa-spinner fa-spin"></i> Redirecting...
+                    </div>
+                </div>
+            `;
+        }
     }
 
     setupEventListeners() {
