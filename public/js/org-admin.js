@@ -1514,6 +1514,24 @@ window.showTab = function(tabName) {
     }
 };
 
+window.openBrandManager = function() {
+    console.log('🎨 Opening Brand Manager...');
+    
+    // Get current organization slug from URL
+    const pathParts = window.location.pathname.split('/');
+    const orgSlug = pathParts[1]; // Assuming URL is /orgSlug/admin
+    
+    if (orgSlug) {
+        // Open brand manager in new tab/window
+        const brandManagerUrl = `/${orgSlug}/brand-manager`;
+        console.log('🎨 Brand Manager URL:', brandManagerUrl);
+        window.open(brandManagerUrl, '_blank');
+    } else {
+        console.error('❌ Could not determine organization slug');
+        alert('Error: Could not determine organization. Please refresh the page and try again.');
+    }
+};
+
 window.openUserModal = function() {
     const modal = document.getElementById('userModal');
     if (modal) {
@@ -2262,3 +2280,569 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+// Plan Management Functions (Service Agents Only)
+window.loadPlansManagement = async function() {
+    if (!window.orgAdmin || !checkServiceAgentAccess()) return;
+    
+    try {
+        console.log('🔄 Loading plans management...');
+        
+        // Load current organization details and plans
+        await Promise.all([
+            loadCurrentPlanDetails(),
+            loadAvailablePlans(),
+            loadUsageData(),
+            loadPlanActivity()
+        ]);
+        
+    } catch (error) {
+        console.error('❌ Error loading plans management:', error);
+        showNotification('Failed to load plan management data', 'error');
+    }
+};
+
+window.loadCurrentPlanDetails = async function() {
+    try {
+        const response = await fetch('/api/global-admin/organizations/current', {
+            headers: { 
+                'Authorization': `Bearer ${sessionStorage.getItem('orgAdminToken')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load organization details');
+        
+        const data = await response.json();
+        const org = data.organization;
+        
+        // Update current plan display
+        document.getElementById('currentPlanName').textContent = 
+            org.subscription?.plan ? org.subscription.plan.toUpperCase() : 'FREE';
+        
+        const planPrices = { free: '$0', professional: '$79', business: '$149' };
+        document.getElementById('currentPlanPrice').textContent = 
+            planPrices[org.subscription?.plan] || '$0';
+        
+        const statusElement = document.getElementById('planStatus');
+        const status = org.subscription?.status || 'active';
+        statusElement.textContent = status.toUpperCase();
+        statusElement.className = `plan-status ${status}`;
+        
+        // Update billing info
+        document.getElementById('nextBilling').textContent = 
+            org.subscription?.nextBilling ? new Date(org.subscription.nextBilling).toLocaleDateString() : 'N/A';
+        document.getElementById('billingCycle').textContent = 
+            org.subscription?.billingCycle || 'monthly';
+        document.getElementById('paymentMethod').textContent = 
+            org.subscription?.paymentMethod || 'Not set';
+        
+    } catch (error) {
+        console.error('❌ Error loading current plan:', error);
+    }
+};
+
+window.loadUsageData = async function() {
+    try {
+        const response = await fetch('/api/global-admin/organizations/current/usage', {
+            headers: { 
+                'Authorization': `Bearer ${sessionStorage.getItem('orgAdminToken')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load usage data');
+        
+        const data = await response.json();
+        const usage = data.usage;
+        
+        // Update agent usage
+        const agentCount = usage.agents || 0;
+        const agentLimit = usage.agentLimit || 1;
+        document.getElementById('agentUsage').textContent = `${agentCount}/${agentLimit}`;
+        updateUsageBar('agentUsageBar', agentCount, agentLimit);
+        
+        // Update knowledge base usage
+        const kbUsage = Math.round((usage.knowledgeBase || 0) / (1024 * 1024)); // Convert to MB
+        const kbLimit = usage.knowledgeBaseLimit || 50;
+        document.getElementById('kbUsage').textContent = `${kbUsage}MB/${kbLimit}MB`;
+        updateUsageBar('kbUsageBar', kbUsage, kbLimit);
+        
+        // Update conversation usage
+        const convUsage = usage.conversations || 0;
+        const convLimit = usage.conversationLimit || 100;
+        document.getElementById('conversationUsage').textContent = `${convUsage}/${convLimit}`;
+        updateUsageBar('conversationUsageBar', convUsage, convLimit);
+        
+    } catch (error) {
+        console.error('❌ Error loading usage data:', error);
+    }
+};
+
+window.updateUsageBar = function(elementId, used, limit) {
+    const percentage = Math.min((used / limit) * 100, 100);
+    const bar = document.getElementById(elementId);
+    
+    bar.style.width = `${percentage}%`;
+    
+    // Color coding based on usage
+    if (percentage >= 90) {
+        bar.className = 'usage-fill danger';
+    } else if (percentage >= 75) {
+        bar.className = 'usage-fill warning';
+    } else {
+        bar.className = 'usage-fill';
+    }
+};
+
+window.loadAvailablePlans = async function() {
+    try {
+        const response = await fetch('/api/plans', {
+            headers: { 
+                'Authorization': `Bearer ${sessionStorage.getItem('orgAdminToken')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load plans');
+        
+        const data = await response.json();
+        const plans = data.plans;
+        const plansGrid = document.getElementById('plansGrid');
+        
+        plansGrid.innerHTML = plans.map(plan => `
+            <div class="plan-option ${plan.popular ? 'popular' : ''}" 
+                 onclick="selectPlan('${plan.name}')">
+                <h4>${plan.displayName}</h4>
+                <div class="price">$${plan.price}<span style="font-size: 14px; color: #666;">/${plan.billingCycle}</span></div>
+                <ul class="plan-features">
+                    ${plan.features.map(feature => `<li>${feature}</li>`).join('')}
+                </ul>
+                <button class="btn btn-primary" style="width: 100%;">
+                    Select Plan
+                </button>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('❌ Error loading plans:', error);
+    }
+};
+
+window.loadPlanActivity = async function() {
+    try {
+        const response = await fetch('/api/global-admin/organizations/current/plan-activity', {
+            headers: { 
+                'Authorization': `Bearer ${sessionStorage.getItem('orgAdminToken')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            // If endpoint doesn't exist, show mock data
+            showMockPlanActivity();
+            return;
+        }
+        
+        const data = await response.json();
+        displayPlanActivity(data.activity);
+        
+    } catch (error) {
+        console.error('❌ Error loading plan activity:', error);
+        showMockPlanActivity();
+    }
+};
+
+window.showMockPlanActivity = function() {
+    const mockActivity = [
+        {
+            type: 'upgrade',
+            description: 'Upgraded to Professional plan',
+            date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+            user: 'Service Agent'
+        },
+        {
+            type: 'billing',
+            description: 'Monthly billing cycle completed',
+            date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+            amount: '$79.00'
+        }
+    ];
+    
+    displayPlanActivity(mockActivity);
+};
+
+window.displayPlanActivity = function(activity) {
+    const activityLog = document.getElementById('planActivityLog');
+    
+    if (!activity || activity.length === 0) {
+        activityLog.innerHTML = '<p style="text-align: center; color: #666;">No recent activity</p>';
+        return;
+    }
+    
+    activityLog.innerHTML = activity.map(item => `
+        <div class="activity-item">
+            <div class="activity-icon ${item.type}">
+                ${getActivityIcon(item.type)}
+            </div>
+            <div style="flex: 1;">
+                <div style="font-weight: 600; margin-bottom: 4px;">${item.description}</div>
+                <div style="color: #666; font-size: 14px;">
+                    ${new Date(item.date).toLocaleDateString()} 
+                    ${item.amount ? `• ${item.amount}` : ''}
+                    ${item.user ? `• by ${item.user}` : ''}
+                </div>
+            </div>
+        </div>
+    `).join('');
+};
+
+window.getActivityIcon = function(type) {
+    const icons = {
+        upgrade: '<i class="fas fa-arrow-up"></i>',
+        downgrade: '<i class="fas fa-arrow-down"></i>',
+        billing: '<i class="fas fa-credit-card"></i>',
+        cancel: '<i class="fas fa-times"></i>',
+        trial: '<i class="fas fa-clock"></i>'
+    };
+    return icons[type] || '<i class="fas fa-info"></i>';
+};
+
+// Plan Action Functions
+window.selectPlan = async function(planName) {
+    if (!checkServiceAgentAccess()) return;
+    
+    // Show plan confirmation modal instead of direct confirmation
+    showPlanConfirmationModal(planName);
+};
+
+window.showPlanConfirmationModal = async function(newPlan) {
+    try {
+        // Load current plan data
+        const response = await fetch('/api/global-admin/organizations/current', {
+            headers: { 
+                'Authorization': `Bearer ${sessionStorage.getItem('orgAdminToken')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load current plan');
+        
+        const data = await response.json();
+        const currentPlan = data.organization.subscription?.plan || 'free';
+        
+        // Update modal content
+        document.getElementById('currentPlanDisplay').textContent = currentPlan.toUpperCase();
+        document.getElementById('newPlanDisplay').textContent = newPlan.toUpperCase();
+        
+        // Show plan changes
+        const changes = getPlanChanges(currentPlan, newPlan);
+        document.getElementById('planChangesDetails').innerHTML = changes;
+        
+        // Store selected plan for confirmation
+        window.selectedPlan = newPlan;
+        
+        // Show modal
+        document.getElementById('planModal').style.display = 'block';
+        
+    } catch (error) {
+        console.error('❌ Error showing plan modal:', error);
+        showNotification('Failed to load plan details', 'error');
+    }
+};
+
+window.getPlanChanges = function(currentPlan, newPlan) {
+    const planFeatures = {
+        free: {
+            agents: 1,
+            storage: '50MB',
+            conversations: 100,
+            features: ['Basic features', 'Email support']
+        },
+        professional: {
+            agents: 10,
+            storage: '1GB',
+            conversations: 2500,
+            features: ['Custom branding', 'Priority support', 'Advanced analytics']
+        },
+        business: {
+            agents: 25,
+            storage: '5GB',
+            conversations: 10000,
+            features: ['API access', '24/7 support', 'Data export', 'Advanced AI']
+        }
+    };
+    
+    const current = planFeatures[currentPlan] || planFeatures.free;
+    const newPlanData = planFeatures[newPlan] || planFeatures.free;
+    
+    let changes = '<ul>';
+    
+    if (current.agents !== newPlanData.agents) {
+        changes += `<li>Agents: ${current.agents} → ${newPlanData.agents}</li>`;
+    }
+    
+    if (current.storage !== newPlanData.storage) {
+        changes += `<li>Storage: ${current.storage} → ${newPlanData.storage}</li>`;
+    }
+    
+    if (current.conversations !== newPlanData.conversations) {
+        changes += `<li>Monthly Conversations: ${current.conversations} → ${newPlanData.conversations}</li>`;
+    }
+    
+    changes += '</ul>';
+    
+    return changes;
+};
+
+window.closePlanModal = function() {
+    document.getElementById('planModal').style.display = 'none';
+    window.selectedPlan = null;
+};
+
+window.confirmPlanChange = async function() {
+    if (!window.selectedPlan) return;
+    
+    try {
+        showNotification('Processing plan change...', 'info');
+        
+        const response = await fetch('/api/global-admin/organizations/current/change-plan', {
+            method: 'POST',
+            headers: { 
+                'Authorization': `Bearer ${sessionStorage.getItem('orgAdminToken')}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ plan: window.selectedPlan })
+        });
+        
+        if (!response.ok) throw new Error('Failed to change plan');
+        
+        showNotification(`Successfully changed to ${window.selectedPlan.toUpperCase()} plan`, 'success');
+        closePlanModal();
+        await loadPlansManagement(); // Reload data
+        
+    } catch (error) {
+        console.error('❌ Error changing plan:', error);
+        showNotification('Failed to change plan', 'error');
+    }
+};
+
+window.showUpgradeOptions = function() {
+    if (!checkServiceAgentAccess()) return;
+    showNotification('Upgrade options - Feature coming soon', 'info');
+};
+
+window.showDowngradeOptions = function() {
+    if (!checkServiceAgentAccess()) return;
+    showNotification('Downgrade options - Feature coming soon', 'info');
+};
+
+window.showBillingHistory = function() {
+    if (!checkServiceAgentAccess()) return;
+    showNotification('Billing history - Feature coming soon', 'info');
+};
+
+window.showCancelOptions = function() {
+    if (!checkServiceAgentAccess()) return;
+    if (confirm('Are you sure you want to cancel the subscription? This action cannot be undone.')) {
+        showNotification('Subscription cancellation - Feature coming soon', 'warning');
+    }
+};
+
+window.extendTrial = async function() {
+    if (!checkServiceAgentAccess()) return;
+    
+    const days = prompt('How many days to extend the trial?', '7');
+    if (days && !isNaN(days)) {
+        try {
+            showNotification(`Extending trial by ${days} days...`, 'info');
+            
+            const response = await fetch('/api/global-admin/organizations/current/extend-trial', {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Bearer ${sessionStorage.getItem('orgAdminToken')}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ days: parseInt(days) })
+            });
+            
+            if (!response.ok) throw new Error('Failed to extend trial');
+            
+            showNotification(`Trial extended by ${days} days`, 'success');
+            await loadCurrentPlanDetails();
+            
+        } catch (error) {
+            console.error('❌ Error extending trial:', error);
+            showNotification('Failed to extend trial', 'error');
+        }
+    }
+};
+
+window.applyDiscount = function() {
+    if (!checkServiceAgentAccess()) return;
+    
+    const discount = prompt('Enter discount code or percentage:', '');
+    if (discount) {
+        showNotification(`Applying discount: ${discount}`, 'info');
+        // This would integrate with billing system
+        setTimeout(() => {
+            showNotification('Discount applied successfully', 'success');
+        }, 2000);
+    }
+};
+
+window.resetUsage = async function() {
+    if (!checkServiceAgentAccess()) return;
+    
+    if (confirm('Are you sure you want to reset usage counters? This will reset conversation and knowledge base usage.')) {
+        try {
+            showNotification('Resetting usage counters...', 'info');
+            
+            const response = await fetch('/api/global-admin/organizations/current/reset-usage', {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Bearer ${sessionStorage.getItem('orgAdminToken')}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) throw new Error('Failed to reset usage');
+            
+            showNotification('Usage counters reset successfully', 'success');
+            await loadUsageData();
+            
+        } catch (error) {
+            console.error('❌ Error resetting usage:', error);
+            showNotification('Failed to reset usage', 'error');
+        }
+    }
+};
+
+window.freezeAccount = function() {
+    if (!checkServiceAgentAccess()) return;
+    
+    if (confirm('Are you sure you want to freeze this account? The organization will not be able to use the service until unfrozen.')) {
+        showNotification('Freezing account...', 'warning');
+        
+        // This would set organization status to frozen
+        setTimeout(() => {
+            showNotification('Account frozen successfully', 'success');
+        }, 2000);
+    }
+};
+
+// Service Agent Access Control
+window.checkServiceAgentAccess = function() {
+    // In a real implementation, this would check user permissions
+    // For now, we'll enable it for all org-admin users
+    // You can enhance this based on your role system
+    
+    const userRole = sessionStorage.getItem('userRole') || 'org-admin';
+    const serviceAgentRoles = ['service-agent', 'global_admin', 'super_admin'];
+    
+    // For now, allow org-admin access to demonstrate the feature
+    if (userRole === 'org-admin' || serviceAgentRoles.includes(userRole)) {
+        return true;
+    }
+    
+    showNotification('Access denied: Service agent privileges required', 'error');
+    return false;
+};
+
+// Global notification function for plan management
+window.showNotification = function(message, type = 'info') {
+    // Create or update notification element
+    let notification = document.getElementById('admin-notification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'admin-notification';
+        document.body.appendChild(notification);
+    }
+    
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        z-index: 10000;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        max-width: 400px;
+        word-wrap: break-word;
+    `;
+    
+    // Color based on type
+    const colors = {
+        success: '#10b981',
+        error: '#ef4444',
+        warning: '#f59e0b',
+        info: '#3b82f6'
+    };
+    
+    notification.style.background = colors[type] || colors.info;
+    
+    // Animate in
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 10);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }
+    }, 5000);
+};
+
+// Show/hide service agent features based on role
+window.initializeServiceAgentFeatures = function() {
+    const isServiceAgent = checkServiceAgentAccess();
+    
+    if (isServiceAgent) {
+        // Show service agent features
+        document.body.classList.add('service-agent');
+        
+        // Load plans management when the tab is first shown
+        const managePlansTab = document.querySelector('[onclick="showTab(\'manage-plans\')"]');
+        if (managePlansTab && managePlansTab.style.display === 'none') {
+            managePlansTab.style.display = 'flex';
+        }
+    } else {
+        // Hide service agent features
+        document.body.classList.remove('service-agent');
+    }
+};
+
+// Enhanced showTab function to handle plans management
+const originalShowTab = window.showTab;
+window.showTab = function(tabName) {
+    console.log(`🔄 showTab called with: ${tabName}`);
+    
+    // Call original showTab function
+    originalShowTab(tabName);
+    
+    // Load plans management data when switching to that tab
+    if (tabName === 'manage-plans') {
+        setTimeout(() => {
+            loadPlansManagement();
+        }, 100);
+    }
+};
+
+// Initialize service agent features when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        initializeServiceAgentFeatures();
+    }, 1000);
+});

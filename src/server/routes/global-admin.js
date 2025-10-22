@@ -300,4 +300,314 @@ router.get('/departments/:id/analytics', requireAdminAccess, async (req, res) =>
   }
 });
 
+// ============================
+// PLAN MANAGEMENT ROUTES (Service Agents)
+// ============================
+
+// Get current organization details for org-admin
+router.get('/organizations/current', requireAdminAccess, async (req, res) => {
+  try {
+    let organizationId;
+    
+    // For magic login users, use their organization
+    if (req.user.magicLogin && req.user.organizationId) {
+      organizationId = req.user.organizationId;
+    } else if (req.user.organizationId) {
+      organizationId = req.user.organizationId;
+    } else {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No organization context available' 
+      });
+    }
+
+    const organization = await Organization.findById(organizationId).select('-__v');
+    
+    if (!organization) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Organization not found' 
+      });
+    }
+
+    res.json({
+      success: true,
+      organization: organization.toObject()
+    });
+  } catch (error) {
+    console.error('❌ Error getting current organization:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get organization usage data
+router.get('/organizations/current/usage', requireAdminAccess, async (req, res) => {
+  try {
+    let organizationId;
+    
+    if (req.user.magicLogin && req.user.organizationId) {
+      organizationId = req.user.organizationId;
+    } else if (req.user.organizationId) {
+      organizationId = req.user.organizationId;
+    } else {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No organization context available' 
+      });
+    }
+
+    const organization = await Organization.findById(organizationId);
+    if (!organization) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Organization not found' 
+      });
+    }
+
+    // Get current usage data
+    const User = require('../models/User');
+    const Knowledge = require('../models/Knowledge');
+
+    const [agentCount, knowledgeStats] = await Promise.all([
+      User.countDocuments({ 
+        organizationId: organizationId, 
+        role: { $in: ['agent', 'admin'] },
+        isActive: true 
+      }),
+      Knowledge.aggregate([
+        { $match: { organizationId: organizationId } },
+        { $group: { 
+          _id: null, 
+          totalSize: { $sum: '$size' },
+          count: { $sum: 1 }
+        }}
+      ])
+    ]);
+
+    const kbData = knowledgeStats[0] || { totalSize: 0, count: 0 };
+    
+    // Get plan limits
+    const planLimits = {
+      free: { agents: 1, knowledgeBase: 50 * 1024 * 1024, conversations: 100 }, // 50MB
+      professional: { agents: 10, knowledgeBase: 1024 * 1024 * 1024, conversations: 2500 }, // 1GB
+      business: { agents: 25, knowledgeBase: 5 * 1024 * 1024 * 1024, conversations: 10000 } // 5GB
+    };
+
+    const currentPlan = organization.subscription?.plan || 'free';
+    const limits = planLimits[currentPlan] || planLimits.free;
+
+    const usage = {
+      agents: agentCount,
+      agentLimit: limits.agents,
+      knowledgeBase: kbData.totalSize,
+      knowledgeBaseLimit: limits.knowledgeBase,
+      conversations: organization.usage?.conversations || 0,
+      conversationLimit: limits.conversations,
+      plan: currentPlan
+    };
+
+    res.json({
+      success: true,
+      usage
+    });
+  } catch (error) {
+    console.error('❌ Error getting organization usage:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Change organization plan
+router.post('/organizations/current/change-plan', requireAdminAccess, async (req, res) => {
+  try {
+    const { plan } = req.body;
+    
+    if (!['free', 'professional', 'business'].includes(plan)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid plan selected' 
+      });
+    }
+
+    let organizationId;
+    
+    if (req.user.magicLogin && req.user.organizationId) {
+      organizationId = req.user.organizationId;
+    } else if (req.user.organizationId) {
+      organizationId = req.user.organizationId;
+    } else {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No organization context available' 
+      });
+    }
+
+    const organization = await Organization.findById(organizationId);
+    if (!organization) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Organization not found' 
+      });
+    }
+
+    // Update subscription
+    organization.subscription = {
+      ...organization.subscription,
+      plan: plan,
+      status: 'active',
+      lastUpdated: new Date(),
+      updatedBy: req.user.username || req.user.email
+    };
+
+    await organization.save();
+
+    console.log(`📋 Plan changed to ${plan} for organization ${organization.name} by ${req.user.username}`);
+
+    res.json({
+      success: true,
+      message: `Plan successfully changed to ${plan}`,
+      subscription: organization.subscription
+    });
+  } catch (error) {
+    console.error('❌ Error changing plan:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Extend trial
+router.post('/organizations/current/extend-trial', requireAdminAccess, async (req, res) => {
+  try {
+    const { days } = req.body;
+    
+    if (!days || isNaN(days) || days < 1 || days > 90) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid trial extension period (1-90 days)' 
+      });
+    }
+
+    let organizationId;
+    
+    if (req.user.magicLogin && req.user.organizationId) {
+      organizationId = req.user.organizationId;
+    } else if (req.user.organizationId) {
+      organizationId = req.user.organizationId;
+    } else {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No organization context available' 
+      });
+    }
+
+    const organization = await Organization.findById(organizationId);
+    if (!organization) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Organization not found' 
+      });
+    }
+
+    // Extend trial
+    const currentTrialEnd = organization.subscription?.trialEnd ? 
+      new Date(organization.subscription.trialEnd) : new Date();
+    
+    const newTrialEnd = new Date(currentTrialEnd.getTime() + (days * 24 * 60 * 60 * 1000));
+
+    organization.subscription = {
+      ...organization.subscription,
+      trialEnd: newTrialEnd,
+      status: 'trial',
+      lastUpdated: new Date(),
+      updatedBy: req.user.username || req.user.email
+    };
+
+    await organization.save();
+
+    console.log(`⏰ Trial extended by ${days} days for organization ${organization.name} by ${req.user.username}`);
+
+    res.json({
+      success: true,
+      message: `Trial extended by ${days} days`,
+      newTrialEnd: newTrialEnd
+    });
+  } catch (error) {
+    console.error('❌ Error extending trial:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Reset usage counters
+router.post('/organizations/current/reset-usage', requireAdminAccess, async (req, res) => {
+  try {
+    let organizationId;
+    
+    if (req.user.magicLogin && req.user.organizationId) {
+      organizationId = req.user.organizationId;
+    } else if (req.user.organizationId) {
+      organizationId = req.user.organizationId;
+    } else {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No organization context available' 
+      });
+    }
+
+    const organization = await Organization.findById(organizationId);
+    if (!organization) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Organization not found' 
+      });
+    }
+
+    // Reset usage counters
+    organization.usage = {
+      conversations: 0,
+      messagesThisMonth: 0,
+      lastReset: new Date(),
+      resetBy: req.user.username || req.user.email
+    };
+
+    await organization.save();
+
+    console.log(`🔄 Usage reset for organization ${organization.name} by ${req.user.username}`);
+
+    res.json({
+      success: true,
+      message: 'Usage counters reset successfully'
+    });
+  } catch (error) {
+    console.error('❌ Error resetting usage:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get plan activity log (placeholder - would integrate with audit system)
+router.get('/organizations/current/plan-activity', requireAdminAccess, async (req, res) => {
+  try {
+    // This is a placeholder - in a real system you'd have an audit log
+    const mockActivity = [
+      {
+        type: 'upgrade',
+        description: 'Plan upgraded to Professional',
+        date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+        user: req.user.username || 'Service Agent'
+      },
+      {
+        type: 'billing',
+        description: 'Monthly billing successful',
+        date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+        amount: '$79.00'
+      }
+    ];
+
+    res.json({
+      success: true,
+      activity: mockActivity
+    });
+  } catch (error) {
+    console.error('❌ Error getting plan activity:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 module.exports = router;

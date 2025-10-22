@@ -4,7 +4,12 @@ const knowledgeSchema = new mongoose.Schema({
     id: {
         type: String,
         required: true,
-        unique: true,
+        index: true
+    },
+    organizationId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Organization',
+        required: true,
         index: true
     },
     category: {

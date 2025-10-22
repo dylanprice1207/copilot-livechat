@@ -212,6 +212,15 @@ app.use('/app', express.static(path.join(__dirname, 'frontend', 'dist'), {
   }
 }));
 
+// Serve uploaded branding assets
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.svg')) {
+      res.setHeader('Content-Type', 'image/svg+xml');
+    }
+  }
+}));
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -819,6 +828,10 @@ app.use('/api/organization', organizationRoutes);
 const { router: subscriptionRoutes } = require('./src/server/routes/subscription');
 app.use('/api/subscription', authenticateToken, subscriptionRoutes);
 
+// Branding Routes
+const brandingRoutes = require('./src/server/routes/branding');
+app.use('/api/branding', brandingRoutes);
+
 // Public subscription plans endpoint
 app.get('/api/plans', async (req, res) => {
     try {
@@ -1062,7 +1075,7 @@ app.use('/:orgSlug/:route', async (req, res, next) => {
     }
     
     // Valid organization routes
-    const validRoutes = ['admin', 'chat', 'agent', 'dashboard'];
+    const validRoutes = ['admin', 'chat', 'agent', 'dashboard', 'brand-manager', 'widget-preview'];
     
     if (!validRoutes.includes(route)) {
         return next();
@@ -1102,6 +1115,79 @@ app.use('/:orgSlug/:route', async (req, res, next) => {
             case 'dashboard':
                 // Serve Vue.js app for organization dashboard
                 res.sendFile(path.join(__dirname, 'frontend', 'dist', 'index.html'));
+                break;
+                
+            case 'brand-manager':
+                // Check subscription for branding features
+                const subscription = organization.subscription || {};
+                const plan = subscription.plan || 'free';
+                const status = subscription.status || 'inactive';
+                const allowedPlans = ['professional', 'pro', 'enterprise', 'premium'];
+                
+                if (!allowedPlans.includes(plan.toLowerCase()) || status !== 'active') {
+                    return res.status(403).send(`
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <title>Upgrade Required - ConvoAI</title>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+                            <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+                        </head>
+                        <body class="bg-light">
+                            <div class="container mt-5">
+                                <div class="row justify-content-center">
+                                    <div class="col-md-8 col-lg-6">
+                                        <div class="card shadow">
+                                            <div class="card-body text-center p-5">
+                                                <div class="mb-4">
+                                                    <i class="fas fa-palette fa-4x text-warning"></i>
+                                                </div>
+                                                <h2 class="card-title">Professional Plan Required</h2>
+                                                <p class="card-text text-muted mb-4">
+                                                    Brand Management features are available on Professional plans and higher.
+                                                    Customize your organization's colors, logos, chat widgets, and portal themes.
+                                                </p>
+                                                <div class="alert alert-info">
+                                                    <strong>Current Plan:</strong> ${plan} (${status})<br>
+                                                    <strong>Required:</strong> Professional or higher
+                                                </div>
+                                                <div class="d-grid gap-2">
+                                                    <a href="/${organization.slug}/admin" class="btn btn-primary">
+                                                        <i class="fas fa-arrow-left me-2"></i>Back to Admin Portal
+                                                    </a>
+                                                    <a href="/api/subscription/upgrade?org=${organization.slug}" class="btn btn-success">
+                                                        <i class="fas fa-rocket me-2"></i>Upgrade to Professional
+                                                    </a>
+                                                </div>
+                                                <hr class="my-4">
+                                                <h6>Professional Plan Features:</h6>
+                                                <ul class="list-unstyled text-start">
+                                                    <li><i class="fas fa-check text-success me-2"></i>Custom color schemes</li>
+                                                    <li><i class="fas fa-check text-success me-2"></i>Logo and favicon upload</li>
+                                                    <li><i class="fas fa-check text-success me-2"></i>Chat widget customization</li>
+                                                    <li><i class="fas fa-check text-success me-2"></i>Portal theme management</li>
+                                                    <li><i class="fas fa-check text-success me-2"></i>Custom CSS injection</li>
+                                                    <li><i class="fas fa-check text-success me-2"></i>Export/import configurations</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </body>
+                        </html>
+                    `);
+                }
+                
+                // Serve brand management interface
+                res.sendFile(path.join(__dirname, 'public', 'brand-manager.html'));
+                break;
+                
+            case 'widget-preview':
+                // Serve widget preview interface
+                res.sendFile(path.join(__dirname, 'public', 'widget-preview.html'));
                 break;
                 
             default:

@@ -92,32 +92,40 @@ class KnowledgeBaseService {
     }
 
     /**
-     * Load knowledge base from MongoDB
+     * Load knowledge base for a specific organization from MongoDB
      */
-    async loadKnowledgeBase() {
+    async loadKnowledgeBaseForOrganization(organizationId) {
         try {
             if (!this.Knowledge) {
                 throw new Error('Knowledge model not initialized');
             }
 
-            console.log('📖 ConvoAI: Loading knowledge base from MongoDB...');
+            console.log(`📖 ConvoAI: Loading knowledge base for organization ${organizationId}...`);
             
-            // Load all active knowledge items from database
-            const items = await this.Knowledge.find({ 'metadata.isActive': true })
-                .select('category title content keywords answers tags priority source fileName uploadDate')
+            // Load active knowledge items for specific organization
+            const query = { 
+                'metadata.isActive': true,
+                $or: [
+                    { organizationId: organizationId },
+                    { organizationId: null } // Include global knowledge
+                ]
+            };
+            
+            const items = await this.Knowledge.find(query)
+                .select('category title content keywords answers tags priority source fileName uploadDate organizationId')
                 .sort({ category: 1, priority: 1, createdAt: -1 })
                 .lean()
                 .exec();
             
-            console.log(`📚 ConvoAI: Loaded ${items.length} knowledge entries from database`);
+            console.log(`📚 ConvoAI: Loaded ${items.length} knowledge entries for organization ${organizationId}`);
             
-            // Clear existing cache
-            this.knowledgeBase.clear();
-            this.categories.clear();
+            // Process items for return
+            const knowledgeMap = new Map();
+            const categoryMap = new Map();
             
-            // Load items into memory for fast access
+            // Load items into organization-specific structure
             for (const item of items) {
-                this.knowledgeBase.set(item._id.toString(), {
+                knowledgeMap.set(item._id.toString(), {
                     id: item._id.toString(),
                     category: item.category,
                     title: item.title,
@@ -129,27 +137,34 @@ class KnowledgeBaseService {
                     source: item.source,
                     fileName: item.fileName,
                     uploadDate: item.uploadDate,
+                    organizationId: item.organizationId,
                     createdAt: item.createdAt,
                     updatedAt: item.updatedAt
                 });
                 
                 // Update category counts
-                if (!this.categories.has(item.category)) {
-                    this.categories.set(item.category, {
+                if (!categoryMap.has(item.category)) {
+                    categoryMap.set(item.category, {
                         name: item.category,
                         count: 0,
                         lastUpdated: item.updatedAt
                     });
                 }
-                const categoryData = this.categories.get(item.category);
+                const categoryData = categoryMap.get(item.category);
                 categoryData.count++;
                 if (item.updatedAt > categoryData.lastUpdated) {
                     categoryData.lastUpdated = item.updatedAt;
                 }
             }
             
+            return {
+                knowledge: knowledgeMap,
+                categories: categoryMap,
+                totalEntries: items.length
+            };
+            
         } catch (error) {
-            console.error('❌ Error loading knowledge base from MongoDB:', error);
+            console.error(`❌ Error loading knowledge base for organization ${organizationId}:`, error);
             throw error;
         }
     }
@@ -371,12 +386,28 @@ class KnowledgeBaseService {
     }
 
     /**
-     * Add new knowledge item to MongoDB
+     * Add knowledge item (organization-aware)
      */
-    async addKnowledge(category, item) {
+    async addKnowledge(category, item, organizationId, createdBy = null) {
         try {
-            // Create MongoDB document
-            const knowledgeDoc = new Knowledge({
+            // Check storage quota first
+            const quotaCheck = await this.checkStorageQuota(organizationId, item.fileSize ? (item.fileSize / (1024 * 1024)) : 0);
+            
+            if (!quotaCheck.allowed) {
+                return {
+                    success: false,
+                    reason: quotaCheck.reason,
+                    message: quotaCheck.message,
+                    quotaInfo: quotaCheck
+                };
+            }
+
+            if (!this.Knowledge) {
+                await this.initializeModel();
+            }
+
+            // Create MongoDB document with organization context
+            const knowledgeDoc = new this.Knowledge({
                 id: item.id,
                 category: category,
                 title: item.title,
@@ -388,6 +419,8 @@ class KnowledgeBaseService {
                 source: item.source || 'manual',
                 fileName: item.fileName || null,
                 uploadDate: item.uploadDate || new Date(),
+                organizationId: organizationId,  // Set organization context
+                createdBy: createdBy,
                 metadata: {
                     fileSize: item.fileSize || null,
                     originalFormat: item.originalFormat || null,
@@ -397,38 +430,37 @@ class KnowledgeBaseService {
                 }
             });
             
-            // Save to database (upsert if exists)
-            await Knowledge.findOneAndUpdate(
-                { id: item.id },
+            // Save to database (upsert if exists within organization)
+            await this.Knowledge.findOneAndUpdate(
+                { 
+                    id: item.id,
+                    organizationId: organizationId  // Scope to organization
+                },
                 knowledgeDoc.toObject(),
                 { upsert: true, new: true }
             );
             
-            // Add to memory cache
-            this.knowledgeBase.set(item.id, { ...item, category });
+            console.log(`✅ Added knowledge item: ${item.id} for organization ${organizationId}`);
             
-            // Update category cache
-            if (!this.categories.has(category)) {
-                this.categories.set(category, {
-                    name: category,
-                    count: 0,
-                    lastUpdated: new Date()
-                });
-            }
-            const categoryData = this.categories.get(category);
-            categoryData.count++;
-            categoryData.lastUpdated = new Date();
-            
-            // Rebuild search index
-            this.buildSearchIndex();
-            
-            console.log(`✅ Added knowledge item: ${item.id}`);
-            return true;
+            return {
+                success: true,
+                message: 'Knowledge item added successfully',
+                item: {
+                    id: item.id,
+                    category: category,
+                    title: item.title,
+                    organizationId: organizationId
+                },
+                quotaInfo: quotaCheck
+            };
             
         } catch (error) {
             console.error('❌ Error adding knowledge to MongoDB:', error);
-            // Fallback to file-based storage
-            return await this.addKnowledgeToFile(category, item);
+            return {
+                success: false,
+                message: 'Failed to add knowledge item',
+                error: error.message
+            };
         }
     }
 
@@ -560,56 +592,56 @@ class KnowledgeBaseService {
     }
 
     /**
-     * Search knowledge base
+     * Search knowledge base for specific organization
      */
-    searchKnowledge(query, category = null, limit = 5) {
-        if (!this.isLoaded || !this.isInitialized) {
-            console.log('⚠️ ConvoAI KnowledgeBase: Not fully initialized yet');
+    async searchKnowledge(query, organizationId, category = null, limit = 5) {
+        try {
+            if (!this.Knowledge) {
+                await this.initializeModel();
+            }
+
+            console.log(`🔍 ConvoAI: Searching knowledge for organization ${organizationId}, query: "${query}"`);
+            
+            // Use the Knowledge model's searchKnowledge static method
+            const results = await this.Knowledge.searchKnowledge(query, category, limit, organizationId);
+            
+            // Convert to the expected format
+            const formattedResults = results.map(item => ({
+                id: item._id.toString(),
+                category: item.category,
+                title: item.title,
+                content: item.content,
+                keywords: item.keywords,
+                answers: item.answers,
+                tags: item.tags,
+                priority: item.priority,
+                source: item.source,
+                fileName: item.fileName,
+                organizationId: item.organizationId
+            }));
+
+            console.log(`📝 ConvoAI: Found ${formattedResults.length} knowledge entries for query`);
+            return formattedResults;
+
+        } catch (error) {
+            console.error('❌ Error searching knowledge base:', error);
             return [{
-                id: 'init-1',
+                id: 'error-1',
                 category: 'system',
-                title: 'ConvoAI System Initializing',
-                content: 'System initializing',
-                answers: ["Our ConvoAI knowledge base is currently initializing. Please try again in a moment, and I'll be ready to assist you!"],
+                title: 'Search Error',
+                content: 'Error occurred while searching',
+                answers: ["I apologize, but I encountered an error while searching the knowledge base. Please try again."],
                 priority: 1,
                 source: 'system'
             }];
         }
-
-        const queryWords = query.toLowerCase().split(/\s+/);
-        const matchedItems = new Set();
-
-        for (const word of queryWords) {
-            if (this.searchIndex.has(word)) {
-                for (const id of this.searchIndex.get(word)) {
-                    const item = this.knowledgeBase.get(id);
-                    if (!category || item.category === category) {
-                        matchedItems.add(item);
-                    }
-                }
-            }
-
-            // Also check partial matches in index
-            for (const [keyword, ids] of this.searchIndex) {
-                if (keyword.includes(word)) {
-                    for (const id of ids) {
-                        const item = this.knowledgeBase.get(id);
-                        if (!category || item.category === category) {
-                            matchedItems.add(item);
-                        }
-                    }
-                }
-            }
-        }
-
-        return Array.from(matchedItems).slice(0, limit);
     }
 
     /**
-     * Get context for AI responses
+     * Get context for AI responses (organization-aware)
      */
-    getContextForMessage(message, department = null) {
-        const results = this.searchKnowledge(message, department, 3);
+    async getContextForMessage(message, organizationId, department = null) {
+        const results = await this.searchKnowledge(message, organizationId, department, 3);
         
         if (results.length === 0) {
             return "";
@@ -628,44 +660,325 @@ class KnowledgeBaseService {
     }
 
     /**
-     * Get all categories
+     * Get all categories for organization
      */
-    getCategories() {
-        return Array.from(this.categories.keys());
+    async getCategories(organizationId) {
+        try {
+            if (!this.Knowledge) {
+                await this.initializeModel();
+            }
+
+            const query = { 
+                'metadata.isActive': true,
+                $or: [
+                    { organizationId: organizationId },
+                    { organizationId: null } // Include global knowledge
+                ]
+            };
+
+            const categories = await this.Knowledge.distinct('category', query);
+            return categories.filter(cat => cat); // Remove any null/empty categories
+        } catch (error) {
+            console.error('❌ Error getting categories:', error);
+            return [];
+        }
     }
 
     /**
-     * Get items by category
+     * Get items by category for organization
      */
-    getItemsByCategory(category) {
-        const items = [];
-        for (const [id, item] of this.knowledgeBase) {
-            if (item.category === category) {
-                items.push(item);
+    async getItemsByCategory(category, organizationId) {
+        try {
+            if (!this.Knowledge) {
+                await this.initializeModel();
+            }
+
+            const results = await this.Knowledge.findByCategory(category, organizationId);
+            
+            return results.map(item => ({
+                id: item._id.toString(),
+                category: item.category,
+                title: item.title,
+                content: item.content,
+                keywords: item.keywords,
+                answers: item.answers,
+                tags: item.tags,
+                priority: item.priority,
+                source: item.source,
+                fileName: item.fileName,
+                organizationId: item.organizationId
+            }));
+        } catch (error) {
+            console.error('❌ Error getting items by category:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Get statistics for organization
+     */
+    async getStats(organizationId) {
+        try {
+            if (!this.Knowledge) {
+                await this.initializeModel();
+            }
+
+            const query = { 
+                'metadata.isActive': true,
+                $or: [
+                    { organizationId: organizationId },
+                    { organizationId: null } // Include global knowledge
+                ]
+            };
+
+            // Get total count
+            const totalItems = await this.Knowledge.countDocuments(query);
+
+            // Get category counts
+            const categoryPipeline = [
+                { $match: query },
+                { $group: { _id: '$category', count: { $sum: 1 } } },
+                { $sort: { _id: 1 } }
+            ];
+            
+            const categoryStats = await this.Knowledge.aggregate(categoryPipeline);
+            const categoryCounts = {};
+            categoryStats.forEach(stat => {
+                if (stat._id) {
+                    categoryCounts[stat._id] = stat.count;
+                }
+            });
+
+            // Get last updated
+            const lastItem = await this.Knowledge.findOne(query, {}, { sort: { updatedAt: -1 } });
+
+            return {
+                totalItems: totalItems,
+                categories: Object.keys(categoryCounts).length,
+                categoryCounts: categoryCounts,
+                isLoaded: totalItems > 0,
+                lastUpdated: lastItem ? lastItem.updatedAt.getTime() : Date.now(),
+                organizationId: organizationId
+            };
+        } catch (error) {
+            console.error('❌ Error getting stats:', error);
+            return {
+                totalItems: 0,
+                categories: 0,
+                categoryCounts: {},
+                isLoaded: false,
+                lastUpdated: Date.now(),
+                organizationId: organizationId
+            };
+        }
+    }
+
+    /**
+     * Get knowledge storage limits based on organization subscription
+     */
+    getStorageLimits(subscriptionPlan) {
+        const limits = {
+            free: {
+                maxEntries: 50,
+                maxFileSizeMB: 5,
+                maxTotalSizeMB: 25
+            },
+            professional: {
+                maxEntries: 1000,
+                maxFileSizeMB: 25,
+                maxTotalSizeMB: 500
+            },
+            enterprise: {
+                maxEntries: -1, // Unlimited
+                maxFileSizeMB: 100,
+                maxTotalSizeMB: -1 // Unlimited
+            }
+        };
+
+        return limits[subscriptionPlan] || limits.free;
+    }
+
+    /**
+     * Check if organization can add new knowledge entry
+     */
+    async checkStorageQuota(organizationId, newFileSizeMB = 0) {
+        try {
+            // Get organization subscription
+            const Organization = require('../models/Organization');
+            const org = await Organization.findById(organizationId);
+            
+            if (!org) {
+                throw new Error('Organization not found');
+            }
+
+            const subscriptionPlan = org.subscription?.plan || 'free';
+            const limits = this.getStorageLimits(subscriptionPlan);
+
+            // Get current usage
+            const stats = await this.getStats(organizationId);
+            
+            // Check entry count limit
+            if (limits.maxEntries !== -1 && stats.totalItems >= limits.maxEntries) {
+                return {
+                    allowed: false,
+                    reason: 'entry_limit_exceeded',
+                    message: `Knowledge base entry limit reached (${limits.maxEntries} entries max for ${subscriptionPlan} plan)`,
+                    currentUsage: stats.totalItems,
+                    limit: limits.maxEntries,
+                    plan: subscriptionPlan
+                };
+            }
+
+            // Check file size limit
+            if (newFileSizeMB > limits.maxFileSizeMB) {
+                return {
+                    allowed: false,
+                    reason: 'file_size_exceeded',
+                    message: `File size exceeds limit (${limits.maxFileSizeMB}MB max for ${subscriptionPlan} plan)`,
+                    fileSize: newFileSizeMB,
+                    limit: limits.maxFileSizeMB,
+                    plan: subscriptionPlan
+                };
+            }
+
+            // Get total storage usage
+            const totalSizeQuery = { 
+                'metadata.isActive': true,
+                organizationId: organizationId
+            };
+            
+            const sizeAggregation = await this.Knowledge.aggregate([
+                { $match: totalSizeQuery },
+                { $group: { _id: null, totalSize: { $sum: '$metadata.fileSize' } } }
+            ]);
+
+            const currentTotalSizeMB = sizeAggregation.length > 0 
+                ? (sizeAggregation[0].totalSize || 0) / (1024 * 1024)
+                : 0;
+
+            // Check total storage limit
+            if (limits.maxTotalSizeMB !== -1 && (currentTotalSizeMB + newFileSizeMB) > limits.maxTotalSizeMB) {
+                return {
+                    allowed: false,
+                    reason: 'storage_limit_exceeded',
+                    message: `Storage limit exceeded (${limits.maxTotalSizeMB}MB max for ${subscriptionPlan} plan)`,
+                    currentUsage: Math.round(currentTotalSizeMB * 100) / 100,
+                    limit: limits.maxTotalSizeMB,
+                    plan: subscriptionPlan
+                };
+            }
+
+            return {
+                allowed: true,
+                plan: subscriptionPlan,
+                limits: limits,
+                usage: {
+                    entries: stats.totalItems,
+                    totalSizeMB: Math.round(currentTotalSizeMB * 100) / 100
+                }
+            };
+
+        } catch (error) {
+            console.error('❌ Error checking storage quota:', error);
+            return {
+                allowed: false,
+                reason: 'quota_check_error',
+                message: 'Unable to verify storage quota',
+                error: error.message
+            };
+        }
+    }
+
+    /**
+     * Get storage usage summary for organization
+     */
+    async getStorageUsage(organizationId) {
+        try {
+            const Organization = require('../models/Organization');
+            const org = await Organization.findById(organizationId);
+            
+            const subscriptionPlan = org?.subscription?.plan || 'free';
+            const limits = this.getStorageLimits(subscriptionPlan);
+            const stats = await this.getStats(organizationId);
+
+            // Get storage size
+            const totalSizeQuery = { 
+                'metadata.isActive': true,
+                organizationId: organizationId
+            };
+            
+            const sizeAggregation = await this.Knowledge.aggregate([
+                { $match: totalSizeQuery },
+                { $group: { _id: null, totalSize: { $sum: '$metadata.fileSize' } } }
+            ]);
+
+            const currentTotalSizeMB = sizeAggregation.length > 0 
+                ? (sizeAggregation[0].totalSize || 0) / (1024 * 1024)
+                : 0;
+
+            return {
+                plan: subscriptionPlan,
+                limits: limits,
+                usage: {
+                    entries: {
+                        current: stats.totalItems,
+                        limit: limits.maxEntries,
+                        percentage: limits.maxEntries === -1 ? 0 : Math.round((stats.totalItems / limits.maxEntries) * 100)
+                    },
+                    storage: {
+                        currentMB: Math.round(currentTotalSizeMB * 100) / 100,
+                        limitMB: limits.maxTotalSizeMB,
+                        percentage: limits.maxTotalSizeMB === -1 ? 0 : Math.round((currentTotalSizeMB / limits.maxTotalSizeMB) * 100)
+                    }
+                },
+                warnings: this.getStorageWarnings(stats.totalItems, currentTotalSizeMB, limits)
+            };
+
+        } catch (error) {
+            console.error('❌ Error getting storage usage:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Generate storage warnings
+     */
+    getStorageWarnings(currentEntries, currentSizeMB, limits) {
+        const warnings = [];
+
+        // Check entry limit warnings
+        if (limits.maxEntries !== -1) {
+            const entryPercentage = (currentEntries / limits.maxEntries) * 100;
+            if (entryPercentage >= 90) {
+                warnings.push({
+                    type: 'entry_limit_critical',
+                    message: `Knowledge base entries critically low: ${currentEntries}/${limits.maxEntries} (${Math.round(entryPercentage)}%)`
+                });
+            } else if (entryPercentage >= 80) {
+                warnings.push({
+                    type: 'entry_limit_warning',
+                    message: `Knowledge base entries getting full: ${currentEntries}/${limits.maxEntries} (${Math.round(entryPercentage)}%)`
+                });
             }
         }
-        return items;
-    }
 
-    /**
-     * Get statistics
-     */
-    getStats() {
-        const categoryCounts = {};
-        for (const [category, data] of this.categories) {
-            categoryCounts[category] = data.count; // Return just the count number
+        // Check storage limit warnings
+        if (limits.maxTotalSizeMB !== -1) {
+            const storagePercentage = (currentSizeMB / limits.maxTotalSizeMB) * 100;
+            if (storagePercentage >= 90) {
+                warnings.push({
+                    type: 'storage_limit_critical',
+                    message: `Knowledge base storage critically low: ${Math.round(currentSizeMB)}MB/${limits.maxTotalSizeMB}MB (${Math.round(storagePercentage)}%)`
+                });
+            } else if (storagePercentage >= 80) {
+                warnings.push({
+                    type: 'storage_limit_warning',
+                    message: `Knowledge base storage getting full: ${Math.round(currentSizeMB)}MB/${limits.maxTotalSizeMB}MB (${Math.round(storagePercentage)}%)`
+                });
+            }
         }
 
-        return {
-            totalItems: this.knowledgeBase.size,
-            categories: this.categories.size, // Number of different categories
-            categoryCounts: categoryCounts,   // Just the counts as numbers
-            searchTerms: this.searchIndex ? this.searchIndex.size : 0,
-            isLoaded: this.knowledgeBase.size > 0,
-            lastUpdated: this.categories.size > 0 
-                ? Math.max(...Array.from(this.categories.values()).map(c => new Date(c.lastUpdated).getTime()))
-                : Date.now()
-        };
+        return warnings;
     }
 
     /**

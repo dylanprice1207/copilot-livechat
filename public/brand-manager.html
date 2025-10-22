@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brand Management - ConvoAI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css" rel="stylesheet">
+    <style>
+        .brand-preview {
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            background: #f8f9fa;
+        }
+        
+        .color-input-group {
+            position: relative;
+        }
+        
+        .color-preview {
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            border: 2px solid #dee2e6;
+            cursor: pointer;
+            display: inline-block;
+        }
+        
+        .upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover {
+            border-color: #0d6efd;
+            background-color: #f8f9ff;
+        }
+        
+        .upload-area.dragover {
+            border-color: #0d6efd;
+            background-color: #e7f1ff;
+        }
+        
+        .font-preview {
+            padding: 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        
+        .widget-preview {
+            position: relative;
+            min-height: 300px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .chat-widget {
+            position: absolute;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        
+        .brand-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            border-bottom: 2px solid transparent;
+            background: none;
+            color: #6c757d;
+        }
+        
+        .nav-tabs .nav-link.active {
+            border-bottom-color: #0d6efd;
+            color: #0d6efd;
+            background: none;
+        }
+        
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .preview-iframe {
+            width: 100%;
+            height: 400px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0">
+                <div class="d-flex flex-column vh-100 bg-dark text-white">
+                    <div class="p-3 border-bottom border-secondary">
+                        <h5 class="mb-0">
+                            <i class="fas fa-palette me-2"></i>
+                            Brand Manager
+                        </h5>
+                    </div>
+                    <nav class="nav nav-pills flex-column p-3">
+                        <a class="nav-link text-white active" href="#colors" data-section="colors">
+                            <i class="fas fa-fill-drip me-2"></i>Colors
+                        </a>
+                        <a class="nav-link text-white" href="#typography" data-section="typography">
+                            <i class="fas fa-font me-2"></i>Typography
+                        </a>
+                        <a class="nav-link text-white" href="#logos" data-section="logos">
+                            <i class="fas fa-image me-2"></i>Logos & Assets
+                        </a>
+                        <a class="nav-link text-white" href="#chat-widget" data-section="chat-widget">
+                            <i class="fas fa-comments me-2"></i>Chat Widget
+                        </a>
+                        <a class="nav-link text-white" href="#portals" data-section="portals">
+                            <i class="fas fa-desktop me-2"></i>Portal Themes
+                        </a>
+                        <a class="nav-link text-white" href="#custom-css" data-section="custom-css">
+                            <i class="fas fa-code me-2"></i>Custom CSS
+                        </a>
+                        <a class="nav-link text-white" href="#preview" data-section="preview">
+                            <i class="fas fa-eye me-2"></i>Preview
+                        </a>
+                    </nav>
+                    <div class="mt-auto p-3 border-top border-secondary">
+                        <button class="btn btn-success btn-sm me-2" onclick="saveBranding()">
+                            <i class="fas fa-save me-1"></i>Save
+                        </button>
+                        <button class="btn btn-outline-light btn-sm" onclick="resetBranding()">
+                            <i class="fas fa-undo me-1"></i>Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10">
+                <div class="p-4">
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2>Brand Management</h2>
+                        <div>
+                            <button class="btn btn-outline-primary me-2" onclick="exportBranding()">
+                                <i class="fas fa-download me-1"></i>Export
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="document.getElementById('import-file').click()">
+                                <i class="fas fa-upload me-1"></i>Import
+                            </button>
+                            <input type="file" id="import-file" accept=".json" style="display: none" onchange="importBranding(this)">
+                        </div>
+                    </div>
+
+                    <!-- Colors Section -->
+                    <div id="colors-section" class="brand-section">
+                        <h4 class="mb-3">
+                            <i class="fas fa-fill-drip me-2"></i>Color Scheme
+                        </h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Primary Colors</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Primary Color</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text p-1">
+                                            <div class="color-preview" id="primary-preview" onclick="openColorPicker('primary')"></div>
+                                        </span>
+                                        <input type="text" class="form-control" id="primary-color" placeholder="#007bff">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Secondary Color</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text p-1">
+                                            <div class="color-preview" id="secondary-preview" onclick="openColorPicker('secondary')"></div>
+                                        </span>
+                                        <input type="text" class="form-control" id="secondary-color" placeholder="#6c757d">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Accent Color</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text p-1">
+                                            <div class="color-preview" id="accent-preview" onclick="openColorPicker('accent')"></div>
+                                        </span>
+                                        <input type="text" class="form-control" id="accent-color" placeholder="#17a2b8">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Status Colors</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Success Color</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text p-1">
+                                            <div class="color-preview" id="success-preview" onclick="openColorPicker('success')"></div>
+                                        </span>
+                                        <input type="text" class="form-control" id="success-color" placeholder="#28a745">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Warning Color</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text p-1">
+                                            <div class="color-preview" id="warning-preview" onclick="openColorPicker('warning')"></div>
+                                        </span>
+                                        <input type="text" class="form-control" id="warning-color" placeholder="#ffc107">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Error Color</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text p-1">
+                                            <div class="color-preview" id="error-preview" onclick="openColorPicker('error')"></div>
+                                        </span>
+                                        <input type="text" class="form-control" id="error-color" placeholder="#dc3545">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Background Colors</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Background</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text p-1">
+                                            <div class="color-preview" id="background-preview" onclick="openColorPicker('background')"></div>
+                                        </span>
+                                        <input type="text" class="form-control" id="background-color" placeholder="#ffffff">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Surface</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text p-1">
+                                            <div class="color-preview" id="surface-preview" onclick="openColorPicker('surface')"></div>
+                                        </span>
+                                        <input type="text" class="form-control" id="surface-color" placeholder="#f8f9fa">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Text Colors</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Primary Text</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text p-1">
+                                            <div class="color-preview" id="text-primary-preview" onclick="openColorPicker('textPrimary')"></div>
+                                        </span>
+                                        <input type="text" class="form-control" id="text-primary-color" placeholder="#212529">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Secondary Text</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text p-1">
+                                            <div class="color-preview" id="text-secondary-preview" onclick="openColorPicker('textSecondary')"></div>
+                                        </span>
+                                        <input type="text" class="form-control" id="text-secondary-color" placeholder="#6c757d">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Typography Section -->
+                    <div id="typography-section" class="brand-section" style="display: none;">
+                        <h4 class="mb-3">
+                            <i class="fas fa-font me-2"></i>Typography
+                        </h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Primary Font Family</label>
+                                    <select class="form-select" id="primary-font">
+                                        <option value="system-ui, -apple-system, sans-serif">System Font</option>
+                                        <option value="'Roboto', sans-serif">Roboto</option>
+                                        <option value="'Open Sans', sans-serif">Open Sans</option>
+                                        <option value="'Poppins', sans-serif">Poppins</option>
+                                        <option value="'Lato', sans-serif">Lato</option>
+                                        <option value="'Montserrat', sans-serif">Montserrat</option>
+                                        <option value="'Inter', sans-serif">Inter</option>
+                                        <option value="'Source Sans Pro', sans-serif">Source Sans Pro</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Heading Font Family</label>
+                                    <select class="form-select" id="heading-font">
+                                        <option value="">Same as Primary</option>
+                                        <option value="'Roboto', sans-serif">Roboto</option>
+                                        <option value="'Open Sans', sans-serif">Open Sans</option>
+                                        <option value="'Poppins', sans-serif">Poppins</option>
+                                        <option value="'Lato', sans-serif">Lato</option>
+                                        <option value="'Montserrat', sans-serif">Montserrat</option>
+                                        <option value="'Inter', sans-serif">Inter</option>
+                                        <option value="'Playfair Display', serif">Playfair Display</option>
+                                        <option value="'Merriweather', serif">Merriweather</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Base Font Size</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="base-font-size" placeholder="16" min="12" max="24">
+                                        <span class="input-group-text">px</span>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Line Height</label>
+                                    <input type="number" class="form-control" id="line-height" placeholder="1.5" min="1" max="3" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="font-preview">
+                            <h1>Heading 1 - Your Brand Typography</h1>
+                            <h2>Heading 2 - Subtitle Example</h2>
+                            <p>This is a paragraph showing how your body text will look with the selected typography settings. It includes normal text and <strong>bold text</strong> to demonstrate font weight variations.</p>
+                        </div>
+                    </div>
+
+                    <!-- Logos Section -->
+                    <div id="logos-section" class="brand-section" style="display: none;">
+                        <h4 class="mb-3">
+                            <i class="fas fa-image me-2"></i>Logos & Assets
+                        </h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Main Logo</h6>
+                                <div class="upload-area" onclick="document.getElementById('logo-upload').click()">
+                                    <div id="logo-preview">
+                                        <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                        <div>Click to upload logo</div>
+                                        <small class="text-muted">PNG, JPG, SVG up to 5MB</small>
+                                    </div>
+                                </div>
+                                <input type="file" id="logo-upload" accept="image/*" style="display: none" onchange="uploadLogo(this)">
+                                <div class="mt-3">
+                                    <label class="form-label">Logo Alt Text</label>
+                                    <input type="text" class="form-control" id="logo-alt" placeholder="Company Logo">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Favicon</h6>
+                                <div class="upload-area" onclick="document.getElementById('favicon-upload').click()">
+                                    <div id="favicon-preview">
+                                        <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                        <div>Click to upload favicon</div>
+                                        <small class="text-muted">ICO, PNG 16x16 or 32x32</small>
+                                    </div>
+                                </div>
+                                <input type="file" id="favicon-upload" accept="image/*,.ico" style="display: none" onchange="uploadFavicon(this)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Widget Section -->
+                    <div id="chat-widget-section" class="brand-section" style="display: none;">
+                        <h4 class="mb-3">
+                            <i class="fas fa-comments me-2"></i>Chat Widget Customization
+                        </h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Widget Position & Size</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Position</label>
+                                    <select class="form-select" id="widget-position">
+                                        <option value="bottom-right">Bottom Right</option>
+                                        <option value="bottom-left">Bottom Left</option>
+                                        <option value="top-right">Top Right</option>
+                                        <option value="top-left">Top Left</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Size</label>
+                                    <select class="form-select" id="widget-size">
+                                        <option value="small">Small</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="large">Large</option>
+                                    </select>
+                                </div>
+                                <h6>Chat Bubble</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Bubble Text</label>
+                                    <input type="text" class="form-control" id="bubble-text" placeholder="Need help? Chat with us!">
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="bubble-enabled">
+                                        <label class="form-check-label" for="bubble-enabled">
+                                            Show chat bubble
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Widget Window</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Header Title</label>
+                                    <input type="text" class="form-control" id="widget-title" placeholder="Chat with us">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Welcome Message</label>
+                                    <textarea class="form-control" id="welcome-message" rows="3" placeholder="Hi! How can we help you today?"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Placeholder Text</label>
+                                    <input type="text" class="form-control" id="placeholder-text" placeholder="Type your message...">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="widget-preview">
+                            <div id="chat-widget-demo" class="chat-widget" style="bottom: 20px; right: 20px; width: 350px; height: 400px;">
+                                <div class="bg-primary text-white p-3 d-flex align-items-center">
+                                    <i class="fas fa-headset me-2"></i>
+                                    <span id="demo-widget-title">Chat with us</span>
+                                </div>
+                                <div class="p-3 flex-grow-1">
+                                    <div class="mb-3">
+                                        <div class="bg-light p-2 rounded">
+                                            <span id="demo-welcome-message">Hi! How can we help you today?</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="p-3 border-top">
+                                    <input type="text" class="form-control" id="demo-placeholder" placeholder="Type your message..." readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Portal Themes Section -->
+                    <div id="portals-section" class="brand-section" style="display: none;">
+                        <h4 class="mb-3">
+                            <i class="fas fa-desktop me-2"></i>Portal Themes
+                        </h4>
+                        <ul class="nav nav-tabs" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#admin-portal">Admin Portal</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#agent-portal">Agent Portal</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#customer-portal">Customer Portal</a>
+                            </li>
+                        </ul>
+                        <div class="tab-content mt-3">
+                            <div class="tab-pane fade show active" id="admin-portal">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>Sidebar</h6>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="admin-sidebar-dark">
+                                                <label class="form-check-label" for="admin-sidebar-dark">
+                                                    Dark sidebar
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="admin-navbar-dark">
+                                                <label class="form-check-label" for="admin-navbar-dark">
+                                                    Dark navigation bar
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Cards & Components</h6>
+                                        <div class="mb-3">
+                                            <label class="form-label">Card Border Radius</label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" id="admin-border-radius" placeholder="8" min="0" max="20">
+                                                <span class="input-group-text">px</span>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="admin-shadows">
+                                                <label class="form-check-label" for="admin-shadows">
+                                                    Enable shadows
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="agent-portal">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>Chat Interface</h6>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="agent-compact-chat">
+                                                <label class="form-check-label" for="agent-compact-chat">
+                                                    Compact chat view
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="agent-sidebar-dark">
+                                                <label class="form-check-label" for="agent-sidebar-dark">
+                                                    Dark sidebar
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Status & Notifications</h6>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="agent-sound-enabled">
+                                                <label class="form-check-label" for="agent-sound-enabled">
+                                                    Enable notification sounds
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="agent-auto-status">
+                                                <label class="form-check-label" for="agent-auto-status">
+                                                    Auto status updates
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="customer-portal">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>Interface Style</h6>
+                                        <div class="mb-3">
+                                            <label class="form-label">Layout Style</label>
+                                            <select class="form-select" id="customer-layout">
+                                                <option value="modern">Modern</option>
+                                                <option value="classic">Classic</option>
+                                                <option value="minimal">Minimal</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="customer-rounded">
+                                                <label class="form-check-label" for="customer-rounded">
+                                                    Rounded corners
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Chat Experience</h6>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="customer-typing-indicator">
+                                                <label class="form-check-label" for="customer-typing-indicator">
+                                                    Show typing indicators
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="customer-read-receipts">
+                                                <label class="form-check-label" for="customer-read-receipts">
+                                                    Show read receipts
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Custom CSS Section -->
+                    <div id="custom-css-section" class="brand-section" style="display: none;">
+                        <h4 class="mb-3">
+                            <i class="fas fa-code me-2"></i>Custom CSS
+                        </h4>
+                        <div class="mb-3">
+                            <label class="form-label">Additional CSS</label>
+                            <textarea class="form-control font-monospace" id="custom-css" rows="15" placeholder="/* Add your custom CSS here */"></textarea>
+                            <small class="form-text text-muted">
+                                This CSS will be applied to all portals. Use CSS variables for consistent theming.
+                            </small>
+                        </div>
+                        <div class="alert alert-info">
+                            <h6>Available CSS Variables:</h6>
+                            <code>
+                                --primary-color, --secondary-color, --accent-color, --success-color, --warning-color, --error-color,
+                                --background-color, --surface-color, --text-primary, --text-secondary, --font-family, --heading-font-family
+                            </code>
+                        </div>
+                    </div>
+
+                    <!-- Preview Section -->
+                    <div id="preview-section" class="brand-section" style="display: none;">
+                        <h4 class="mb-3">
+                            <i class="fas fa-eye me-2"></i>Live Preview
+                        </h4>
+                        <ul class="nav nav-tabs" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#preview-widget">Chat Widget</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#preview-admin">Admin Portal</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#preview-agent">Agent Portal</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#preview-customer">Customer Portal</a>
+                            </li>
+                        </ul>
+                        <div class="tab-content mt-3">
+                            <div class="tab-pane fade show active" id="preview-widget">
+                                <iframe id="widget-preview-iframe" class="preview-iframe" src="about:blank"></iframe>
+                            </div>
+                            <div class="tab-pane fade" id="preview-admin">
+                                <iframe id="admin-preview-iframe" class="preview-iframe" src="about:blank"></iframe>
+                            </div>
+                            <div class="tab-pane fade" id="preview-agent">
+                                <iframe id="agent-preview-iframe" class="preview-iframe" src="about:blank"></iframe>
+                            </div>
+                            <div class="tab-pane fade" id="preview-customer">
+                                <iframe id="customer-preview-iframe" class="preview-iframe" src="about:blank"></iframe>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-primary" onclick="updatePreview()">
+                                <i class="fas fa-refresh me-1"></i>Update Preview
+                            </button>
+                            <button class="btn btn-outline-primary ms-2" onclick="openWidgetPreview()">
+                                <i class="fas fa-external-link-alt me-1"></i>Open Widget Preview
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div class="modal fade" id="loadingModal" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <div id="loading-text">Processing...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
+    <script>
+        let currentBranding = {};
+        let colorPickers = {};
+        let orgSlug = window.location.pathname.split('/')[1];
+
+        // Initialize the brand manager
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeNavigation();
+            initializeColorPickers();
+            loadBranding();
+            setupEventListeners();
+        });
+
+        function initializeNavigation() {
+            const navLinks = document.querySelectorAll('[data-section]');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const section = this.dataset.section;
+                    showSection(section);
+                    
+                    // Update active state
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+        }
+
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.brand-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Show selected section
+            const targetSection = document.getElementById(sectionName + '-section');
+            if (targetSection) {
+                targetSection.style.display = 'block';
+            }
+        }
+
+        function initializeColorPickers() {
+            const colorFields = [
+                'primary', 'secondary', 'accent', 'success', 'warning', 'error',
+                'background', 'surface', 'textPrimary', 'textSecondary'
+            ];
+
+            colorFields.forEach(field => {
+                const input = document.getElementById(field.replace(/([A-Z])/g, '-$1').toLowerCase() + '-color');
+                const preview = document.getElementById(field.replace(/([A-Z])/g, '-$1').toLowerCase() + '-preview');
+                
+                if (input && preview) {
+                    // Create color picker
+                    const pickr = Pickr.create({
+                        el: preview,
+                        theme: 'classic',
+                        default: input.placeholder || '#000000',
+                        components: {
+                            preview: true,
+                            opacity: true,
+                            hue: true,
+                            interaction: {
+                                hex: true,
+                                rgba: true,
+                                hsla: true,
+                                input: true,
+                                save: true
+                            }
+                        }
+                    });
+
+                    pickr.on('save', (color) => {
+                        const hexColor = color.toHEXA().toString();
+                        input.value = hexColor;
+                        preview.style.backgroundColor = hexColor;
+                        updateLivePreview();
+                        pickr.hide();
+                    });
+
+                    colorPickers[field] = pickr;
+
+                    // Update preview when input changes
+                    input.addEventListener('input', function() {
+                        preview.style.backgroundColor = this.value;
+                        if (colorPickers[field]) {
+                            colorPickers[field].setColor(this.value);
+                        }
+                        updateLivePreview();
+                    });
+                }
+            });
+        }
+
+        function openColorPicker(field) {
+            if (colorPickers[field]) {
+                colorPickers[field].show();
+            }
+        }
+
+        function setupEventListeners() {
+            // Typography changes
+            document.getElementById('primary-font').addEventListener('change', updateFontPreview);
+            document.getElementById('heading-font').addEventListener('change', updateFontPreview);
+            document.getElementById('base-font-size').addEventListener('input', updateFontPreview);
+            document.getElementById('line-height').addEventListener('input', updateFontPreview);
+
+            // Widget changes
+            document.getElementById('widget-title').addEventListener('input', updateWidgetPreview);
+            document.getElementById('welcome-message').addEventListener('input', updateWidgetPreview);
+            document.getElementById('placeholder-text').addEventListener('input', updateWidgetPreview);
+            document.getElementById('bubble-text').addEventListener('input', updateWidgetPreview);
+        }
+
+        function updateFontPreview() {
+            const primaryFont = document.getElementById('primary-font').value;
+            const headingFont = document.getElementById('heading-font').value || primaryFont;
+            const fontSize = document.getElementById('base-font-size').value || 16;
+            const lineHeight = document.getElementById('line-height').value || 1.5;
+
+            const preview = document.querySelector('.font-preview');
+            preview.style.fontFamily = primaryFont;
+            preview.style.fontSize = fontSize + 'px';
+            preview.style.lineHeight = lineHeight;
+            
+            const headings = preview.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            headings.forEach(heading => {
+                heading.style.fontFamily = headingFont;
+            });
+        }
+
+        function updateWidgetPreview() {
+            const title = document.getElementById('widget-title').value || 'Chat with us';
+            const welcome = document.getElementById('welcome-message').value || 'Hi! How can we help you today?';
+            const placeholder = document.getElementById('placeholder-text').value || 'Type your message...';
+
+            document.getElementById('demo-widget-title').textContent = title;
+            document.getElementById('demo-welcome-message').textContent = welcome;
+            document.getElementById('demo-placeholder').placeholder = placeholder;
+        }
+
+        function updateLivePreview() {
+            // Update colors in real-time
+            // This would apply the colors to preview elements
+        }
+
+        async function loadBranding() {
+            try {
+                showLoading('Loading branding settings...');
+                
+                const response = await fetch(`/api/branding/${orgSlug}/branding`);
+                const data = await response.json();
+                
+                if (response.status === 403) {
+                    // Subscription required
+                    showSubscriptionRequired(data);
+                    return;
+                }
+                
+                if (data.success) {
+                    currentBranding = data.branding;
+                    populateForm(currentBranding);
+                } else {
+                    throw new Error(data.error || 'Failed to load branding');
+                }
+            } catch (error) {
+                console.error('Error loading branding:', error);
+                showAlert('Error loading branding settings', 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function populateForm(branding) {
+            // Colors
+            if (branding.colors) {
+                Object.keys(branding.colors).forEach(key => {
+                    const input = document.getElementById(key.replace(/([A-Z])/g, '-$1').toLowerCase() + '-color');
+                    const preview = document.getElementById(key.replace(/([A-Z])/g, '-$1').toLowerCase() + '-preview');
+                    
+                    if (input && branding.colors[key]) {
+                        input.value = branding.colors[key];
+                        if (preview) {
+                            preview.style.backgroundColor = branding.colors[key];
+                        }
+                        if (colorPickers[key]) {
+                            colorPickers[key].setColor(branding.colors[key]);
+                        }
+                    }
+                });
+            }
+
+            // Typography
+            if (branding.typography) {
+                const typography = branding.typography;
+                if (typography.primaryFont) document.getElementById('primary-font').value = typography.primaryFont;
+                if (typography.headingFont) document.getElementById('heading-font').value = typography.headingFont;
+                if (typography.baseFontSize) document.getElementById('base-font-size').value = typography.baseFontSize;
+                if (typography.lineHeight) document.getElementById('line-height').value = typography.lineHeight;
+                updateFontPreview();
+            }
+
+            // Logo
+            if (branding.logo) {
+                if (branding.logo.alt) document.getElementById('logo-alt').value = branding.logo.alt;
+                if (branding.logo.url) {
+                    document.getElementById('logo-preview').innerHTML = `
+                        <img src="${branding.logo.url}" alt="Current Logo" style="max-width: 200px; max-height: 100px;">
+                        <div class="mt-2">
+                            <small class="text-muted">Current logo</small>
+                            <br>
+                            <button class="btn btn-sm btn-outline-danger" onclick="removeLogo()">Remove</button>
+                        </div>
+                    `;
+                }
+            }
+
+            // Chat Widget
+            if (branding.chatWidget) {
+                const widget = branding.chatWidget;
+                if (widget.position) document.getElementById('widget-position').value = widget.position;
+                if (widget.size) document.getElementById('widget-size').value = widget.size;
+                if (widget.title) document.getElementById('widget-title').value = widget.title;
+                if (widget.welcomeMessage) document.getElementById('welcome-message').value = widget.welcomeMessage;
+                if (widget.placeholderText) document.getElementById('placeholder-text').value = widget.placeholderText;
+                if (widget.bubbleText) document.getElementById('bubble-text').value = widget.bubbleText;
+                if (widget.bubbleEnabled !== undefined) document.getElementById('bubble-enabled').checked = widget.bubbleEnabled;
+                updateWidgetPreview();
+            }
+
+            // Portal Themes
+            if (branding.portalThemes) {
+                const themes = branding.portalThemes;
+                
+                // Admin Portal
+                if (themes.admin) {
+                    const admin = themes.admin;
+                    if (admin.darkSidebar !== undefined) document.getElementById('admin-sidebar-dark').checked = admin.darkSidebar;
+                    if (admin.darkNavbar !== undefined) document.getElementById('admin-navbar-dark').checked = admin.darkNavbar;
+                    if (admin.borderRadius) document.getElementById('admin-border-radius').value = admin.borderRadius;
+                    if (admin.enableShadows !== undefined) document.getElementById('admin-shadows').checked = admin.enableShadows;
+                }
+
+                // Agent Portal
+                if (themes.agent) {
+                    const agent = themes.agent;
+                    if (agent.compactChat !== undefined) document.getElementById('agent-compact-chat').checked = agent.compactChat;
+                    if (agent.darkSidebar !== undefined) document.getElementById('agent-sidebar-dark').checked = agent.darkSidebar;
+                    if (agent.soundEnabled !== undefined) document.getElementById('agent-sound-enabled').checked = agent.soundEnabled;
+                    if (agent.autoStatus !== undefined) document.getElementById('agent-auto-status').checked = agent.autoStatus;
+                }
+
+                // Customer Portal
+                if (themes.customer) {
+                    const customer = themes.customer;
+                    if (customer.layoutStyle) document.getElementById('customer-layout').value = customer.layoutStyle;
+                    if (customer.roundedCorners !== undefined) document.getElementById('customer-rounded').checked = customer.roundedCorners;
+                    if (customer.typingIndicator !== undefined) document.getElementById('customer-typing-indicator').checked = customer.typingIndicator;
+                    if (customer.readReceipts !== undefined) document.getElementById('customer-read-receipts').checked = customer.readReceipts;
+                }
+            }
+
+            // Custom CSS
+            if (branding.customCSS) {
+                document.getElementById('custom-css').value = branding.customCSS;
+            }
+        }
+
+        function collectFormData() {
+            const formData = {
+                colors: {
+                    primary: document.getElementById('primary-color').value,
+                    secondary: document.getElementById('secondary-color').value,
+                    accent: document.getElementById('accent-color').value,
+                    success: document.getElementById('success-color').value,
+                    warning: document.getElementById('warning-color').value,
+                    error: document.getElementById('error-color').value,
+                    background: document.getElementById('background-color').value,
+                    surface: document.getElementById('surface-color').value,
+                    textPrimary: document.getElementById('text-primary-color').value,
+                    textSecondary: document.getElementById('text-secondary-color').value
+                },
+                typography: {
+                    primaryFont: document.getElementById('primary-font').value,
+                    headingFont: document.getElementById('heading-font').value,
+                    baseFontSize: parseInt(document.getElementById('base-font-size').value) || 16,
+                    lineHeight: parseFloat(document.getElementById('line-height').value) || 1.5
+                },
+                logo: {
+                    alt: document.getElementById('logo-alt').value
+                },
+                chatWidget: {
+                    position: document.getElementById('widget-position').value,
+                    size: document.getElementById('widget-size').value,
+                    title: document.getElementById('widget-title').value,
+                    welcomeMessage: document.getElementById('welcome-message').value,
+                    placeholderText: document.getElementById('placeholder-text').value,
+                    bubbleText: document.getElementById('bubble-text').value,
+                    bubbleEnabled: document.getElementById('bubble-enabled').checked
+                },
+                portalThemes: {
+                    admin: {
+                        darkSidebar: document.getElementById('admin-sidebar-dark').checked,
+                        darkNavbar: document.getElementById('admin-navbar-dark').checked,
+                        borderRadius: parseInt(document.getElementById('admin-border-radius').value) || 8,
+                        enableShadows: document.getElementById('admin-shadows').checked
+                    },
+                    agent: {
+                        compactChat: document.getElementById('agent-compact-chat').checked,
+                        darkSidebar: document.getElementById('agent-sidebar-dark').checked,
+                        soundEnabled: document.getElementById('agent-sound-enabled').checked,
+                        autoStatus: document.getElementById('agent-auto-status').checked
+                    },
+                    customer: {
+                        layoutStyle: document.getElementById('customer-layout').value,
+                        roundedCorners: document.getElementById('customer-rounded').checked,
+                        typingIndicator: document.getElementById('customer-typing-indicator').checked,
+                        readReceipts: document.getElementById('customer-read-receipts').checked
+                    }
+                },
+                customCSS: document.getElementById('custom-css').value
+            };
+
+            // Keep existing logo URL if present
+            if (currentBranding.logo && currentBranding.logo.url) {
+                formData.logo.url = currentBranding.logo.url;
+            }
+
+            return formData;
+        }
+
+        async function saveBranding() {
+            try {
+                showLoading('Saving branding settings...');
+                
+                const formData = collectFormData();
+                
+                const response = await fetch(`/api/branding/${orgSlug}/branding`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentBranding = data.branding;
+                    showAlert('Branding settings saved successfully!', 'success');
+                } else {
+                    throw new Error(data.error || 'Failed to save branding');
+                }
+            } catch (error) {
+                console.error('Error saving branding:', error);
+                showAlert('Error saving branding settings', 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function resetBranding() {
+            if (!confirm('Are you sure you want to reset all branding to defaults? This cannot be undone.')) {
+                return;
+            }
+
+            try {
+                showLoading('Resetting branding to defaults...');
+                
+                const response = await fetch(`/api/branding/${orgSlug}/branding/reset`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentBranding = data.branding;
+                    populateForm(currentBranding);
+                    showAlert('Branding reset to defaults', 'success');
+                } else {
+                    throw new Error(data.error || 'Failed to reset branding');
+                }
+            } catch (error) {
+                console.error('Error resetting branding:', error);
+                showAlert('Error resetting branding', 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function uploadLogo(input) {
+            if (!input.files || !input.files[0]) return;
+
+            try {
+                showLoading('Uploading logo...');
+                
+                const formData = new FormData();
+                formData.append('logo', input.files[0]);
+                formData.append('alt', document.getElementById('logo-alt').value || 'Company Logo');
+
+                const response = await fetch(`/api/branding/${orgSlug}/branding/logo`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update preview
+                    document.getElementById('logo-preview').innerHTML = `
+                        <img src="${data.logoUrl}" alt="Uploaded Logo" style="max-width: 200px; max-height: 100px;">
+                        <div class="mt-2">
+                            <small class="text-success">Logo uploaded successfully</small>
+                            <br>
+                            <button class="btn btn-sm btn-outline-danger" onclick="removeLogo()">Remove</button>
+                        </div>
+                    `;
+                    currentBranding.logo = currentBranding.logo || {};
+                    currentBranding.logo.url = data.logoUrl;
+                    showAlert('Logo uploaded successfully!', 'success');
+                } else {
+                    throw new Error(data.error || 'Failed to upload logo');
+                }
+            } catch (error) {
+                console.error('Error uploading logo:', error);
+                showAlert('Error uploading logo', 'danger');
+            } finally {
+                hideLoading();
+                input.value = ''; // Reset file input
+            }
+        }
+
+        async function uploadFavicon(input) {
+            if (!input.files || !input.files[0]) return;
+
+            try {
+                showLoading('Uploading favicon...');
+                
+                const formData = new FormData();
+                formData.append('favicon', input.files[0]);
+
+                const response = await fetch(`/api/branding/${orgSlug}/branding/favicon`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update preview
+                    document.getElementById('favicon-preview').innerHTML = `
+                        <img src="${data.faviconUrl}" alt="Uploaded Favicon" style="width: 32px; height: 32px;">
+                        <div class="mt-2">
+                            <small class="text-success">Favicon uploaded successfully</small>
+                        </div>
+                    `;
+                    showAlert('Favicon uploaded successfully!', 'success');
+                } else {
+                    throw new Error(data.error || 'Failed to upload favicon');
+                }
+            } catch (error) {
+                console.error('Error uploading favicon:', error);
+                showAlert('Error uploading favicon', 'danger');
+            } finally {
+                hideLoading();
+                input.value = ''; // Reset file input
+            }
+        }
+
+        async function exportBranding() {
+            try {
+                const response = await fetch(`/api/branding/${orgSlug}/branding/export`);
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${orgSlug}-branding-export.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    showAlert('Branding exported successfully!', 'success');
+                } else {
+                    throw new Error('Failed to export branding');
+                }
+            } catch (error) {
+                console.error('Error exporting branding:', error);
+                showAlert('Error exporting branding', 'danger');
+            }
+        }
+
+        async function importBranding(input) {
+            if (!input.files || !input.files[0]) return;
+
+            try {
+                showLoading('Importing branding settings...');
+                
+                const formData = new FormData();
+                formData.append('brandingFile', input.files[0]);
+
+                const response = await fetch(`/api/branding/${orgSlug}/branding/import`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentBranding = data.branding;
+                    populateForm(currentBranding);
+                    showAlert('Branding imported successfully!', 'success');
+                } else {
+                    throw new Error(data.error || 'Failed to import branding');
+                }
+            } catch (error) {
+                console.error('Error importing branding:', error);
+                showAlert('Error importing branding', 'danger');
+            } finally {
+                hideLoading();
+                input.value = ''; // Reset file input
+            }
+        }
+
+        function updatePreview() {
+            // This would update the preview iframes with current branding
+            showAlert('Preview updated', 'info');
+        }
+
+        function openWidgetPreview() {
+            const orgSlug = window.location.pathname.split('/')[1];
+            if (orgSlug) {
+                const previewUrl = `/${orgSlug}/widget-preview`;
+                window.open(previewUrl, '_blank');
+            }
+        }
+
+        function showLoading(text = 'Loading...') {
+            document.getElementById('loading-text').textContent = text;
+            const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
+            modal.show();
+        }
+
+        function hideLoading() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('loadingModal'));
+            if (modal) {
+                modal.hide();
+            }
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.parentNode.removeChild(alertDiv);
+                }
+            }, 5000);
+        }
+
+        function showSubscriptionRequired(data) {
+            const mainContent = document.querySelector('.col-md-9.col-lg-10 .p-4');
+            mainContent.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-palette fa-5x text-warning"></i>
+                    </div>
+                    <h2>Professional Plan Required</h2>
+                    <p class="text-muted mb-4">
+                        Brand Management features are available on Professional plans and higher.
+                        Customize your organization's colors, logos, chat widgets, and portal themes.
+                    </p>
+                    <div class="alert alert-info d-inline-block">
+                        <strong>Current Plan:</strong> ${data.currentPlan} (${data.subscriptionStatus})<br>
+                        <strong>Required:</strong> Professional or higher
+                    </div>
+                    <div class="mt-4">
+                        <a href="/${orgSlug}/admin" class="btn btn-primary me-3">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Admin Portal
+                        </a>
+                        <a href="${data.upgradeUrl || '/pricing'}" class="btn btn-success">
+                            <i class="fas fa-rocket me-2"></i>Upgrade to Professional
+                        </a>
+                    </div>
+                    <div class="mt-5">
+                        <h5>Professional Plan Features:</h5>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <ul class="list-unstyled text-start">
+                                    <li><i class="fas fa-check text-success me-2"></i>Custom color schemes</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Logo and favicon upload</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Chat widget customization</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="list-unstyled text-start">
+                                    <li><i class="fas fa-check text-success me-2"></i>Portal theme management</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Custom CSS injection</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Export/import configurations</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

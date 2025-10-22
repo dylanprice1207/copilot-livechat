@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Widget Preview - ConvoAI</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+        
+        .preview-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .preview-header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .preview-content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            min-height: 600px;
+        }
+        
+        .website-mockup {
+            background: white;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .config-panel {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .mockup-content {
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .mockup-content h1 {
+            color: #2d3748;
+            margin-bottom: 20px;
+        }
+        
+        .mockup-content p {
+            margin-bottom: 15px;
+            color: #4a5568;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #2d3748;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-group textarea {
+            height: 60px;
+            resize: vertical;
+        }
+        
+        .color-input {
+            width: 60px !important;
+            padding: 4px !important;
+            height: 36px;
+        }
+        
+        .btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            background: #3182ce;
+        }
+        
+        /* Chat Widget Styles */
+        .chat-widget {
+            position: fixed;
+            z-index: 10000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            transition: all 0.3s ease;
+        }
+        
+        .chat-bubble {
+            background: var(--primary-color, #4299e1);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .chat-bubble:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+        
+        .chat-window {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            width: 350px;
+            height: 400px;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .chat-header {
+            background: var(--primary-color, #4299e1);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .chat-header h4 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .chat-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .welcome-message {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #4a5568;
+        }
+        
+        .chat-input-area {
+            padding: 15px 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .chat-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            outline: none;
+            font-size: 14px;
+        }
+        
+        .chat-input:focus {
+            border-color: var(--primary-color, #4299e1);
+        }
+        
+        /* Position classes */
+        .bottom-right {
+            bottom: 20px;
+            right: 20px;
+        }
+        
+        .bottom-left {
+            bottom: 20px;
+            left: 20px;
+        }
+        
+        .top-right {
+            top: 20px;
+            right: 20px;
+        }
+        
+        .top-left {
+            top: 20px;
+            left: 20px;
+        }
+        
+        /* Size classes */
+        .size-small .chat-window {
+            width: 300px;
+            height: 350px;
+        }
+        
+        .size-medium .chat-window {
+            width: 350px;
+            height: 400px;
+        }
+        
+        .size-large .chat-window {
+            width: 400px;
+            height: 450px;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-container">
+        <div class="preview-header">
+            <h1>
+                <i class="fas fa-eye"></i>
+                Chat Widget Preview
+            </h1>
+            <p>Test your organization's chat widget appearance and behavior before deploying.</p>
+        </div>
+        
+        <div class="preview-content">
+            <div class="website-mockup">
+                <div class="mockup-content">
+                    <h1>Welcome to Your Website</h1>
+                    <p>This is a mockup of your website where the chat widget will appear. You can customize the widget's appearance, position, and behavior using the controls on the right.</p>
+                    
+                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
+                    
+                    <p>The chat widget will appear in the corner of your website, allowing visitors to easily start a conversation with your support team.</p>
+                    
+                    <h2>Key Features</h2>
+                    <ul>
+                        <li>Real-time messaging</li>
+                        <li>File sharing capabilities</li>
+                        <li>Agent status indicators</li>
+                        <li>Customizable appearance</li>
+                        <li>Mobile responsive design</li>
+                    </ul>
+                    
+                    <p>Click the chat widget to see how it opens and interacts with your visitors.</p>
+                </div>
+            </div>
+            
+            <div class="config-panel">
+                <h3>Widget Configuration</h3>
+                
+                <div class="form-group">
+                    <label>Position</label>
+                    <select id="position" onchange="updateWidget()">
+                        <option value="bottom-right">Bottom Right</option>
+                        <option value="bottom-left">Bottom Left</option>
+                        <option value="top-right">Top Right</option>
+                        <option value="top-left">Top Left</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Size</label>
+                    <select id="size" onchange="updateWidget()">
+                        <option value="small">Small</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="large">Large</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Primary Color</label>
+                    <input type="color" id="primaryColor" class="color-input" value="#4299e1" onchange="updateWidget()">
+                </div>
+                
+                <div class="form-group">
+                    <label>Bubble Text</label>
+                    <input type="text" id="bubbleText" value="Need help? Chat with us!" onchange="updateWidget()">
+                </div>
+                
+                <div class="form-group">
+                    <label>Window Title</label>
+                    <input type="text" id="windowTitle" value="Chat with us" onchange="updateWidget()">
+                </div>
+                
+                <div class="form-group">
+                    <label>Welcome Message</label>
+                    <textarea id="welcomeMessage" onchange="updateWidget()">Hi! How can we help you today?</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Placeholder Text</label>
+                    <input type="text" id="placeholderText" value="Type your message..." onchange="updateWidget()">
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="showBubble" checked onchange="updateWidget()">
+                        Show chat bubble
+                    </label>
+                </div>
+                
+                <button class="btn" onclick="loadFromBranding()">Load from Branding</button>
+                <button class="btn" onclick="resetToDefaults()">Reset to Defaults</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chat Widget -->
+    <div id="chatWidget" class="chat-widget bottom-right size-medium">
+        <div class="chat-bubble" onclick="toggleChatWindow()">
+            <i class="fas fa-comments"></i>
+            <span id="bubbleTextSpan">Need help? Chat with us!</span>
+        </div>
+        
+        <div class="chat-window" id="chatWindow">
+            <div class="chat-header">
+                <h4 id="windowTitleSpan">Chat with us</h4>
+                <button class="chat-close" onclick="closeChatWindow()">×</button>
+            </div>
+            <div class="chat-messages">
+                <div class="welcome-message" id="welcomeMessageDiv">
+                    Hi! How can we help you today?
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" class="chat-input" id="chatInput" placeholder="Type your message...">
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script>
+        let isOpen = false;
+        
+        function updateWidget() {
+            const widget = document.getElementById('chatWidget');
+            const bubble = document.querySelector('.chat-bubble');
+            const header = document.querySelector('.chat-header');
+            const input = document.getElementById('chatInput');
+            
+            // Update position
+            const position = document.getElementById('position').value;
+            widget.className = `chat-widget ${position} size-${document.getElementById('size').value}`;
+            
+            // Update colors
+            const primaryColor = document.getElementById('primaryColor').value;
+            document.documentElement.style.setProperty('--primary-color', primaryColor);
+            
+            // Update text content
+            document.getElementById('bubbleTextSpan').textContent = document.getElementById('bubbleText').value;
+            document.getElementById('windowTitleSpan').textContent = document.getElementById('windowTitle').value;
+            document.getElementById('welcomeMessageDiv').textContent = document.getElementById('welcomeMessage').value;
+            input.placeholder = document.getElementById('placeholderText').value;
+            
+            // Show/hide bubble
+            const showBubble = document.getElementById('showBubble').checked;
+            bubble.style.display = showBubble ? 'flex' : 'none';
+        }
+        
+        function toggleChatWindow() {
+            const window = document.getElementById('chatWindow');
+            const bubble = document.querySelector('.chat-bubble');
+            
+            if (isOpen) {
+                closeChatWindow();
+            } else {
+                window.style.display = 'flex';
+                bubble.style.display = 'none';
+                isOpen = true;
+            }
+        }
+        
+        function closeChatWindow() {
+            const window = document.getElementById('chatWindow');
+            const bubble = document.querySelector('.chat-bubble');
+            const showBubble = document.getElementById('showBubble').checked;
+            
+            window.style.display = 'none';
+            if (showBubble) {
+                bubble.style.display = 'flex';
+            }
+            isOpen = false;
+        }
+        
+        async function loadFromBranding() {
+            try {
+                // Get org slug from URL
+                const pathParts = window.location.pathname.split('/');
+                const orgSlug = pathParts[1];
+                
+                if (!orgSlug) {
+                    alert('Could not determine organization. Please access this page through your organization URL.');
+                    return;
+                }
+                
+                const response = await fetch(`/api/branding/${orgSlug}/widget-config`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const config = data.config;
+                    
+                    // Update form values
+                    document.getElementById('position').value = config.position || 'bottom-right';
+                    document.getElementById('size').value = config.size || 'medium';
+                    document.getElementById('bubbleText').value = config.bubbleText || 'Need help? Chat with us!';
+                    document.getElementById('windowTitle').value = config.title || 'Chat with us';
+                    document.getElementById('welcomeMessage').value = config.welcomeMessage || 'Hi! How can we help you today?';
+                    document.getElementById('placeholderText').value = config.placeholderText || 'Type your message...';
+                    document.getElementById('showBubble').checked = config.bubbleEnabled !== false;
+                    
+                    // Update primary color from CSS variables
+                    if (data.cssVariables && data.cssVariables['--primary-color']) {
+                        document.getElementById('primaryColor').value = data.cssVariables['--primary-color'];
+                    }
+                    
+                    updateWidget();
+                    
+                    alert('Widget configuration loaded from branding settings!');
+                } else {
+                    throw new Error(data.error || 'Failed to load widget configuration');
+                }
+            } catch (error) {
+                console.error('Error loading branding:', error);
+                alert('Error loading widget configuration: ' + error.message);
+            }
+        }
+        
+        function resetToDefaults() {
+            document.getElementById('position').value = 'bottom-right';
+            document.getElementById('size').value = 'medium';
+            document.getElementById('primaryColor').value = '#4299e1';
+            document.getElementById('bubbleText').value = 'Need help? Chat with us!';
+            document.getElementById('windowTitle').value = 'Chat with us';
+            document.getElementById('welcomeMessage').value = 'Hi! How can we help you today?';
+            document.getElementById('placeholderText').value = 'Type your message...';
+            document.getElementById('showBubble').checked = true;
+            
+            updateWidget();
+        }
+        
+        // Initialize widget
+        updateWidget();
+        
+        // Handle chat input
+        document.getElementById('chatInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && this.value.trim()) {
+                // Here you would normally send the message
+                console.log('Message sent:', this.value);
+                this.value = '';
+            }
+        });
+    </script>
+</body>
+</html>

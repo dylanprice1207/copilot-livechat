@@ -2,14 +2,36 @@ const KnowledgeBaseService = require('../services/KnowledgeBaseService');
 
 class KnowledgeBaseController {
     /**
+     * Get organization ID from request (user's organization)
+     */
+    getOrganizationId(req) {
+        // Extract organization ID from authenticated user
+        return req.user?.organizationId || req.user?.organization || null;
+    }
+
+    /**
      * Get knowledge base statistics
      */
     async getStats(req, res) {
         try {
-            const stats = KnowledgeBaseService.getStats();
+            const organizationId = this.getOrganizationId(req);
+            
+            if (!organizationId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Organization context required'
+                });
+            }
+
+            const stats = await KnowledgeBaseService.getStats(organizationId);
+            
+            // Also get storage usage for subscription monitoring
+            const storageUsage = await KnowledgeBaseService.getStorageUsage(organizationId);
+            
             res.json({
                 success: true,
-                stats: stats
+                stats: stats,
+                storage: storageUsage
             });
         } catch (error) {
             console.error('❌ Error getting KB stats:', error);
@@ -27,6 +49,7 @@ class KnowledgeBaseController {
     async search(req, res) {
         try {
             const { query, category, limit } = req.query;
+            const organizationId = this.getOrganizationId(req);
             
             if (!query) {
                 return res.status(400).json({
@@ -35,8 +58,16 @@ class KnowledgeBaseController {
                 });
             }
 
-            const results = KnowledgeBaseService.searchKnowledge(
-                query, 
+            if (!organizationId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Organization context required'
+                });
+            }
+
+            const results = await KnowledgeBaseService.searchKnowledge(
+                query,
+                organizationId,
                 category || null, 
                 parseInt(limit) || 5
             );
@@ -45,6 +76,7 @@ class KnowledgeBaseController {
                 success: true,
                 query: query,
                 category: category,
+                organizationId: organizationId,
                 results: results
             });
         } catch (error) {
@@ -62,9 +94,19 @@ class KnowledgeBaseController {
      */
     async getCategories(req, res) {
         try {
-            const categories = KnowledgeBaseService.getCategories();
+            const organizationId = this.getOrganizationId(req);
+            
+            if (!organizationId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Organization context required'
+                });
+            }
+
+            const categories = await KnowledgeBaseService.getCategories(organizationId);
             res.json({
                 success: true,
+                organizationId: organizationId,
                 categories: categories
             });
         } catch (error) {
@@ -83,6 +125,7 @@ class KnowledgeBaseController {
     async getItemsByCategory(req, res) {
         try {
             const { category } = req.params;
+            const organizationId = this.getOrganizationId(req);
             
             if (!category) {
                 return res.status(400).json({
@@ -91,10 +134,18 @@ class KnowledgeBaseController {
                 });
             }
 
-            const items = KnowledgeBaseService.getItemsByCategory(category);
+            if (!organizationId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Organization context required'
+                });
+            }
+
+            const items = await KnowledgeBaseService.getItemsByCategory(category, organizationId);
             res.json({
                 success: true,
                 category: category,
+                organizationId: organizationId,
                 items: items
             });
         } catch (error) {
@@ -113,11 +164,20 @@ class KnowledgeBaseController {
     async addKnowledge(req, res) {
         try {
             const { category, item } = req.body;
+            const organizationId = this.getOrganizationId(req);
+            const createdBy = req.user?.id || req.user?._id;
             
             if (!category || !item) {
                 return res.status(400).json({
                     success: false,
                     message: 'Category and item are required'
+                });
+            }
+
+            if (!organizationId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Organization context required'
                 });
             }
 
@@ -129,18 +189,23 @@ class KnowledgeBaseController {
                 });
             }
 
-            const success = await KnowledgeBaseService.addKnowledge(category, item);
+            const result = await KnowledgeBaseService.addKnowledge(category, item, organizationId, createdBy);
             
-            if (success) {
+            if (result.success) {
                 res.json({
                     success: true,
-                    message: 'Knowledge item added successfully',
-                    item: item
+                    message: result.message,
+                    item: result.item,
+                    storage: result.quotaInfo
                 });
             } else {
-                res.status(500).json({
+                // Handle quota/limit errors with appropriate status codes
+                const statusCode = result.reason?.includes('limit') || result.reason?.includes('quota') ? 402 : 500;
+                res.status(statusCode).json({
                     success: false,
-                    message: 'Failed to add knowledge item'
+                    reason: result.reason,
+                    message: result.message,
+                    storage: result.quotaInfo
                 });
             }
         } catch (error) {
@@ -158,12 +223,20 @@ class KnowledgeBaseController {
      */
     async initialize(req, res) {
         try {
+            const organizationId = this.getOrganizationId(req);
+            
             await KnowledgeBaseService.initialize();
             
-            const stats = KnowledgeBaseService.getStats();
+            // Get organization-specific stats if organizationId available
+            let stats = null;
+            if (organizationId) {
+                stats = await KnowledgeBaseService.getStats(organizationId);
+            }
+            
             res.json({
                 success: true,
                 message: 'Knowledge base initialized successfully',
+                organizationId: organizationId,
                 stats: stats
             });
         } catch (error) {

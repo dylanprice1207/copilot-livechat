@@ -31,6 +31,24 @@ const organizationSchema = new mongoose.Schema({
     welcomeMessage: { type: String, default: 'Welcome! How can we help you today?' }
   },
   
+  // Subscription information
+  subscription: {
+    plan: { 
+      type: String, 
+      enum: ['free', 'basic', 'starter', 'professional', 'pro', 'enterprise', 'premium'],
+      default: 'free'
+    },
+    status: { 
+      type: String, 
+      enum: ['active', 'inactive', 'trial', 'cancelled', 'suspended'],
+      default: 'active'
+    },
+    startDate: { type: Date, default: Date.now },
+    endDate: { type: Date },
+    stripeCustomerId: { type: String },
+    stripeSubscriptionId: { type: String }
+  },
+  
   // Organization admin (optional due to User model registration issues)
   adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
   
