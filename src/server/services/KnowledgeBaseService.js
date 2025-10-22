@@ -57,7 +57,7 @@ class KnowledgeBaseService {
 
             // Load knowledge from database with timeout
             const knowledge = await Promise.race([
-                this.loadKnowledgeBase(),
+                this.loadKnowledgeBaseFromFiles(),
                 new Promise((_, reject) => 
                     setTimeout(() => reject(new Error('Knowledge base load timeout')), 15000)
                 )
@@ -993,7 +993,7 @@ class KnowledgeBaseService {
             );
 
             // Reload knowledge base to reflect changes
-            await this.loadKnowledgeBase();
+            await this.loadKnowledgeBaseFromFiles();
             this.buildSearchIndex();
 
             return {
