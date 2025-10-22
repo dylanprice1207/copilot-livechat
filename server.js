@@ -72,13 +72,12 @@ const ChatFlowService = require('./src/server/services/ChatFlowService');
 const aiRoutes = require('./src/server/routes/ai');
 
 // Safe model imports to prevent Mongoose overwrite errors
-let User, Organization, Department, Message, ChatRoom;
+let User, Department, Message, ChatRoom;
 
 try {
     // Clear any existing model cache
     if (mongoose.models) {
         delete mongoose.models.User;
-        delete mongoose.models.Organization;
         delete mongoose.models.Department;
         delete mongoose.models.Message;
         delete mongoose.models.ChatRoom;
@@ -86,7 +85,6 @@ try {
     }
     
     User = require('./src/server/models/User');
-    Organization = require('./src/server/models/Organization');
     Department = require('./src/server/models/Department');
     Message = require('./src/server/models/Message');
     ChatRoom = require('./src/server/models/ChatRoom');
@@ -519,90 +517,6 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Admin Authentication Routes
-app.post('/api/admin-login', async (req, res) => {
-  try {
-    const { email, password, role } = req.body;
-
-    // Validation
-    if (!email || !password || !role) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Email, password, and role are required' 
-      });
-    }
-
-    // Find user by email
-    const user = await User.findOne({ email: email.toLowerCase() });
-    
-    if (!user) {
-      return res.status(401).json({ 
-        success: false,
-        message: 'Invalid credentials' 
-      });
-    }
-
-    // Check password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    
-    if (!isPasswordValid) {
-      return res.status(401).json({ 
-        success: false,
-        message: 'Invalid credentials' 
-      });
-    }
-
-    // Check if user has required role
-    const allowedRoles = {
-      'agent': ['agent', 'admin', 'super_admin', 'global_admin'],
-      'admin': ['admin', 'super_admin', 'global_admin'],
-      'org-admin': ['admin', 'super_admin', 'global_admin'],
-      'service': ['service_agent', 'global_admin']
-    };
-
-    if (!allowedRoles[role] || !allowedRoles[role].includes(user.role)) {
-      return res.status(403).json({ 
-        success: false,
-        message: 'Insufficient permissions for this admin portal' 
-      });
-    }
-
-    // Generate JWT token with admin claim
-    const token = jwt.sign(
-      { 
-        userId: user._id,
-        email: user.email,
-        role: user.role,
-        adminPortal: role
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '8h' }
-    );
-
-    console.log(`Admin login successful: ${user.email} -> ${role} portal`);
-
-    res.json({
-      success: true,
-      message: 'Login successful',
-      token,
-      role: role,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role
-      }
-    });
-
-  } catch (error) {
-    console.error('Admin login error:', error);
-    res.status(500).json({ 
-      success: false,
-      message: 'Server error' 
-    });
-  }
-});
-
 // Verify admin token
 app.get('/api/verify-admin-token', authenticateToken, async (req, res) => {
   try {
@@ -742,14 +656,14 @@ const requireAdminAuth = (allowedRoles = []) => {
                    req.cookies?.adminToken;
       
       if (!token) {
-        return res.redirect('/admin-login');
+        return res.redirect('/login');
       }
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const user = await User.findById(decoded.userId);
       
       if (!user) {
-        return res.redirect('/admin-login');
+        return res.redirect('/login');
       }
 
       // Check if user has required role for this portal
@@ -767,7 +681,7 @@ const requireAdminAuth = (allowedRoles = []) => {
           <body>
             <h1 class="error">Access Denied</h1>
             <p>You don't have permission to access this admin portal.</p>
-            <a href="/admin-login">Login with different account</a>
+            <a href="/login">Login with different account</a>
           </body>
           </html>
         `);
@@ -778,7 +692,7 @@ const requireAdminAuth = (allowedRoles = []) => {
       next();
     } catch (error) {
       console.error('Admin auth error:', error);
-      return res.redirect('/admin-login');
+      return res.redirect('/login');
     }
   };
 };
@@ -832,22 +746,6 @@ app.use('/api/subscription', authenticateToken, subscriptionRoutes);
 // Branding Routes
 const brandingRoutes = require('./src/server/routes/branding');
 app.use('/api/branding', brandingRoutes);
-
-// Service Portal Routes
-const servicePortalRoutes = require('./src/server/routes/service-portal');
-app.use('/api/service-portal', authenticateToken, servicePortalRoutes);
-
-// Serve service portal HTML
-app.get('/service-portal', (req, res) => {
-    // Redirect to login page if not authenticated
-    res.sendFile(path.join(__dirname, 'public', 'service-portal-login.html'));
-});
-
-// Serve authenticated service portal dashboard
-app.get('/service-portal-dashboard', (req, res) => {
-    // Always serve the dashboard HTML, let the frontend handle authentication
-    res.sendFile(path.join(__dirname, 'public', 'service-portal.html'));
-});
 
 // Public subscription plans endpoint
 app.get('/api/plans', async (req, res) => {
@@ -2819,10 +2717,6 @@ app.get('/admin', (req, res) => {
   res.redirect('/#/dashboard');
 });
 
-app.get('/dashboard', (req, res) => {
-  res.redirect('/#/dashboard');
-});
-
 app.get('/analytics', (req, res) => {
   res.redirect('/#/analytics');
 });
@@ -3018,11 +2912,6 @@ app.get('/setup-admin', async (req, res) => {
   }
 });
 
-// Admin Login Route (no auth required)
-app.get('/admin-login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'admin-login.html'));
-});
-
 // Clean Admin Routes with Authentication
 app.get('/agent', requireAdminAuth(['agent', 'admin', 'super_admin', 'global_admin']), (req, res) => {
   // Remove emojis and create clean agent dashboard
@@ -3080,13 +2969,13 @@ app.get('/agent', requireAdminAuth(['agent', 'admin', 'super_admin', 'global_adm
         function logout() {
             localStorage.removeItem('adminToken');
             localStorage.removeItem('adminRole');
-            window.location.href = '/admin-login';
+            window.location.href = '/login';
         }
         // Set token for iframe requests
         window.addEventListener('load', function() {
             const token = localStorage.getItem('adminToken');
             if (!token) {
-                window.location.href = '/admin-login';
+                window.location.href = '/login';
             }
         });
     </script>
@@ -3204,7 +3093,7 @@ app.get('/admin', requireAdminAuth(['admin', 'super_admin', 'global_admin']), (r
         function logout() {
             localStorage.removeItem('adminToken');
             localStorage.removeItem('adminRole');
-            window.location.href = '/admin-login';
+            window.location.href = '/login';
         }
     </script>
 </body>
@@ -3272,7 +3161,7 @@ app.get('/org-admin', requireAdminAuth(['admin', 'super_admin', 'global_admin'])
         function logout() {
             localStorage.removeItem('adminToken');
             localStorage.removeItem('adminRole');
-            window.location.href = '/admin-login';
+            window.location.href = '/login';
         }
     </script>
 </body>
