@@ -2735,7 +2735,8 @@ app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/') || 
       req.path.startsWith('/assets/') || 
       req.path.startsWith('/public/') ||
-      req.path.includes('.')) {
+      req.path.includes('.') ||
+      req.path === '/admin-login') {
     return next();
   }
   
